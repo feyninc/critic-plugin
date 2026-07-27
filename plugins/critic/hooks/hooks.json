@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook session-start",
+            "timeout": 10,
+            "statusMessage": "Connecting this task to Critic"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook user-prompt-submit",
+            "timeout": 5,
+            "statusMessage": "Updating Critic"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook post-tool-use",
+            "timeout": 5,
+            "statusMessage": "Updating Critic"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook stop",
+            "timeout": 20,
+            "statusMessage": "Checking Critic explanations"
+          }
+        ]
+      }
+    ]
+  }
+}

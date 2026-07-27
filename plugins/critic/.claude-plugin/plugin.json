@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "critic",
+  "version": "2.0.0",
+  "description": "Explain agent-written changes with durable narratives, visual evidence, and author-backed review conversations.",
+  "author": {
+    "name": "Feyn",
+    "email": "support@usefeyn.com",
+    "url": "https://github.com/feyninc"
+  },
+  "homepage": "https://www.critic.run",
+  "repository": "https://github.com/feyninc/critic-plugin",
+  "license": "Apache-2.0",
+  "keywords": ["code-review", "change-narratives", "coding-agents"]
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "critic": {
+      "type": "http",
+      "url": "https://plugin.critic.run/mcp"
+    }
+  }
+}

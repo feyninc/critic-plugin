@@ -1,0 +1,20 @@
+{
+  "name": "critic",
+  "interface": {
+    "displayName": "Critic by Feyn"
+  },
+  "plugins": [
+    {
+      "name": "critic",
+      "source": {
+        "source": "local",
+        "path": "./plugins/critic"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

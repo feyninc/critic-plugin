@@ -1,0 +1,40 @@
+{
+  "name": "critic",
+  "version": "2.0.0",
+  "description": "Explain agent-written changes with durable narratives, visual evidence, and author-backed review conversations.",
+  "author": {
+    "name": "Feyn",
+    "email": "support@usefeyn.com",
+    "url": "https://github.com/feyninc"
+  },
+  "homepage": "https://www.critic.run",
+  "repository": "https://github.com/feyninc/critic-plugin",
+  "license": "Apache-2.0",
+  "keywords": ["code-review", "change-narratives", "coding-agents"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Critic",
+    "shortDescription": "Explain agent-written changes where reviewers read them.",
+    "longDescription": "Critic publishes concise change and file narratives from the agent session that wrote the code. Reviewers can inspect stable patchsets, visual evidence, and author-backed answers without adding generated prose to source files.",
+    "developerName": "Feyn",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Publish change narratives",
+      "Attach visual evidence",
+      "Answer review questions"
+    ],
+    "websiteURL": "https://www.critic.run",
+    "privacyPolicyURL": "https://www.critic.run/privacy",
+    "termsOfServiceURL": "https://www.critic.run/terms",
+    "brandColor": "#1C1917",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png",
+    "logoDark": "./assets/icon.png",
+    "defaultPrompt": [
+      "Publish this change to Critic with useful file explanations.",
+      "Update the Critic narrative for my current patchset.",
+      "Attach verified visual evidence to this Critic change."
+    ]
+  }
+}

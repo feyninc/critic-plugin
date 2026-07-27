@@ -1,0 +1,14 @@
+{
+  "name": "critic",
+  "description": "Critic connects Claude Code sessions to narrative code changes and read-only side questions.",
+  "owner": {
+    "name": "Feyn"
+  },
+  "plugins": [
+    {
+      "name": "critic",
+      "description": "Explain agent-written changes and answer side questions from the coding session.",
+      "source": "./plugins/critic"
+    }
+  ]
+}
