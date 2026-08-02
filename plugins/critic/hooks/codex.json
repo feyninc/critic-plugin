@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook session-start --provider claude",
+            "command": "node \"${PLUGIN_ROOT}/bin/critic.mjs\" hook session-start --provider codex",
             "timeout": 10,
             "statusMessage": "Connecting this task to Critic"
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook user-prompt-submit --provider claude",
+            "command": "node \"${PLUGIN_ROOT}/bin/critic.mjs\" hook user-prompt-submit --provider codex",
             "timeout": 5,
             "statusMessage": "Updating Critic"
           }
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook post-tool-use --provider claude",
+            "command": "node \"${PLUGIN_ROOT}/bin/critic.mjs\" hook post-tool-use --provider codex",
             "timeout": 5,
             "statusMessage": "Updating Critic"
           }
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/critic.mjs\" hook stop --provider claude",
+            "command": "node \"${PLUGIN_ROOT}/bin/critic.mjs\" hook stop --provider codex",
             "timeout": 20,
             "statusMessage": "Checking Critic explanations"
           }

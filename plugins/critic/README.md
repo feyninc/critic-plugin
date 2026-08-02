@@ -11,8 +11,8 @@ then ask the authoring agent questions against the stable patchset.
 - One MCP tool named `critic.publish_patchset`.
 - Four lifecycle hooks that connect an authoring session, observe its work, and
   request a publication checkpoint before the session finishes.
-- One local bridge process that keeps device credentials, repository access,
-  local snapshotting, and reviewer continuations on the user's device.
+- One Node runtime containing short-lived lifecycle hooks and a bounded
+  outbound reviewer connector.
 - One hosted OAuth MCP endpoint at `https://plugin.critic.run/mcp`.
 
 The plugin does not review code, merge changes, push branches, open pull
@@ -33,13 +33,20 @@ Claude Code users in a managed environment may need an administrator to allow
 
 ## Data and permissions
 
-The local bridge reads Git metadata and the current patch in repositories where
-the coding agent is already working. It sends the patch, explanations, selected
-visual evidence, and Critic discussion context to Critic. Lifecycle hooks retain
+Lifecycle hooks read Git metadata and the current patch only in repositories
+where the coding agent is already working. They send the patch, explanations,
+selected visual evidence, and Critic discussion context to Critic. They retain
 only the event, session identifier, working directory, and relevant tool name.
-They discard prompts, assistant messages, transcript locations, tool arguments,
-and tool results before anything is spooled or transmitted. Device credentials
-are stored under `~/.critic` with user-only permissions.
+Prompts, assistant messages, transcript locations, tool arguments, and tool
+results are discarded. There is no local spool, Git poller, filesystem watcher,
+runtime copy, or private updater. Device credentials are stored under
+`~/.critic/v3` with user-only permissions.
+
+The reviewer connector holds one outbound Convex websocket and a 45-second
+heartbeat while connected. Idle heartbeats do not run Git, scan files, or grow
+local state. Reviewer conversations use the exact authored session and expose
+only Critic's repository-scoped read tools. Critic never reads coding-agent
+transcripts.
 
 The publication tool writes to Critic and may replace or delete existing
 explanations when the caller explicitly requests those operations. It does not

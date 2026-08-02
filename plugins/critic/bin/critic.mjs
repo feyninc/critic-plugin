@@ -422,11 +422,11 @@ var require_codegen = __commonJS((exports) => {
       const rhs = this.rhs === undefined ? "" : ` = ${this.rhs}`;
       return `${varKind} ${this.name}${rhs};` + _n;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       if (!names[this.name.str])
         return;
       if (this.rhs)
-        this.rhs = optimizeExpr(this.rhs, names, constants2);
+        this.rhs = optimizeExpr(this.rhs, names, constants);
       return this;
     }
     get names() {
@@ -444,10 +444,10 @@ var require_codegen = __commonJS((exports) => {
     render({ _n }) {
       return `${this.lhs} = ${this.rhs};` + _n;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
         return;
-      this.rhs = optimizeExpr(this.rhs, names, constants2);
+      this.rhs = optimizeExpr(this.rhs, names, constants);
       return this;
     }
     get names() {
@@ -513,8 +513,8 @@ var require_codegen = __commonJS((exports) => {
     optimizeNodes() {
       return `${this.code}` ? this : undefined;
     }
-    optimizeNames(names, constants2) {
-      this.code = optimizeExpr(this.code, names, constants2);
+    optimizeNames(names, constants) {
+      this.code = optimizeExpr(this.code, names, constants);
       return this;
     }
     get names() {
@@ -544,12 +544,12 @@ var require_codegen = __commonJS((exports) => {
       }
       return nodes.length > 0 ? this : undefined;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       const { nodes } = this;
       let i2 = nodes.length;
       while (i2--) {
         const n = nodes[i2];
-        if (n.optimizeNames(names, constants2))
+        if (n.optimizeNames(names, constants))
           continue;
         subtractNames(names, n.names);
         nodes.splice(i2, 1);
@@ -606,12 +606,12 @@ var require_codegen = __commonJS((exports) => {
         return;
       return this;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       var _a4;
-      this.else = (_a4 = this.else) === null || _a4 === undefined ? undefined : _a4.optimizeNames(names, constants2);
-      if (!(super.optimizeNames(names, constants2) || this.else))
+      this.else = (_a4 = this.else) === null || _a4 === undefined ? undefined : _a4.optimizeNames(names, constants);
+      if (!(super.optimizeNames(names, constants) || this.else))
         return;
-      this.condition = optimizeExpr(this.condition, names, constants2);
+      this.condition = optimizeExpr(this.condition, names, constants);
       return this;
     }
     get names() {
@@ -636,10 +636,10 @@ var require_codegen = __commonJS((exports) => {
     render(opts) {
       return `for(${this.iteration})` + super.render(opts);
     }
-    optimizeNames(names, constants2) {
-      if (!super.optimizeNames(names, constants2))
+    optimizeNames(names, constants) {
+      if (!super.optimizeNames(names, constants))
         return;
-      this.iteration = optimizeExpr(this.iteration, names, constants2);
+      this.iteration = optimizeExpr(this.iteration, names, constants);
       return this;
     }
     get names() {
@@ -677,10 +677,10 @@ var require_codegen = __commonJS((exports) => {
     render(opts) {
       return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
     }
-    optimizeNames(names, constants2) {
-      if (!super.optimizeNames(names, constants2))
+    optimizeNames(names, constants) {
+      if (!super.optimizeNames(names, constants))
         return;
-      this.iterable = optimizeExpr(this.iterable, names, constants2);
+      this.iterable = optimizeExpr(this.iterable, names, constants);
       return this;
     }
     get names() {
@@ -725,11 +725,11 @@ var require_codegen = __commonJS((exports) => {
       (_b2 = this.finally) === null || _b2 === undefined || _b2.optimizeNodes();
       return this;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       var _a4, _b2;
-      super.optimizeNames(names, constants2);
-      (_a4 = this.catch) === null || _a4 === undefined || _a4.optimizeNames(names, constants2);
-      (_b2 = this.finally) === null || _b2 === undefined || _b2.optimizeNames(names, constants2);
+      super.optimizeNames(names, constants);
+      (_a4 = this.catch) === null || _a4 === undefined || _a4.optimizeNames(names, constants);
+      (_b2 = this.finally) === null || _b2 === undefined || _b2.optimizeNames(names, constants);
       return this;
     }
     get names() {
@@ -1003,7 +1003,7 @@ var require_codegen = __commonJS((exports) => {
   function addExprNames(names, from) {
     return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
   }
-  function optimizeExpr(expr, names, constants2) {
+  function optimizeExpr(expr, names, constants) {
     if (expr instanceof code_1.Name)
       return replaceName(expr);
     if (!canOptimize(expr))
@@ -1018,14 +1018,14 @@ var require_codegen = __commonJS((exports) => {
       return items;
     }, []));
     function replaceName(n) {
-      const c = constants2[n.str];
+      const c = constants[n.str];
       if (c === undefined || names[n.str] !== 1)
         return n;
       delete names[n.str];
       return c;
     }
     function canOptimize(e) {
-      return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants2[c.str] !== undefined);
+      return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants[c.str] !== undefined);
     }
   }
   function subtractNames(names, from) {
@@ -2930,7 +2930,7 @@ var require_compile = __commonJS((exports) => {
     const schOrFunc = root.refs[ref];
     if (schOrFunc)
       return schOrFunc;
-    let _sch = resolve6.call(this, root, ref);
+    let _sch = resolve5.call(this, root, ref);
     if (_sch === undefined) {
       const schema = (_a4 = root.localRefs) === null || _a4 === undefined ? undefined : _a4[ref];
       const { schemaId } = this.opts;
@@ -2957,7 +2957,7 @@ var require_compile = __commonJS((exports) => {
   function sameSchemaEnv(s1, s2) {
     return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
   }
-  function resolve6(root, ref) {
+  function resolve5(root, ref) {
     let sch;
     while (typeof (sch = this.refs[ref]) == "string")
       ref = sch;
@@ -3539,59 +3539,59 @@ var require_fast_uri = __commonJS((exports, module) => {
     if (typeof uri === "string") {
       uri = normalizeString(uri, options);
     } else if (typeof uri === "object") {
-      uri = parse6(serialize(uri, options), options);
+      uri = parse7(serialize(uri, options), options);
     }
     return uri;
   }
-  function resolve6(baseURI, relativeURI, options) {
+  function resolve5(baseURI, relativeURI, options) {
     const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
-    const resolved = resolveComponent(parse6(baseURI, schemelessOptions), parse6(relativeURI, schemelessOptions), schemelessOptions, true);
+    const resolved = resolveComponent(parse7(baseURI, schemelessOptions), parse7(relativeURI, schemelessOptions), schemelessOptions, true);
     schemelessOptions.skipEscape = true;
     return serialize(resolved, schemelessOptions);
   }
-  function resolveComponent(base, relative3, options, skipNormalization) {
+  function resolveComponent(base, relative4, options, skipNormalization) {
     const target = {};
     if (!skipNormalization) {
-      base = parse6(serialize(base, options), options);
-      relative3 = parse6(serialize(relative3, options), options);
+      base = parse7(serialize(base, options), options);
+      relative4 = parse7(serialize(relative4, options), options);
     }
     options = options || {};
-    if (!options.tolerant && relative3.scheme) {
-      target.scheme = relative3.scheme;
-      target.userinfo = relative3.userinfo;
-      target.host = relative3.host;
-      target.port = relative3.port;
-      target.path = removeDotSegments(relative3.path || "");
-      target.query = relative3.query;
+    if (!options.tolerant && relative4.scheme) {
+      target.scheme = relative4.scheme;
+      target.userinfo = relative4.userinfo;
+      target.host = relative4.host;
+      target.port = relative4.port;
+      target.path = removeDotSegments(relative4.path || "");
+      target.query = relative4.query;
     } else {
-      if (relative3.userinfo !== undefined || relative3.host !== undefined || relative3.port !== undefined) {
-        target.userinfo = relative3.userinfo;
-        target.host = relative3.host;
-        target.port = relative3.port;
-        target.path = removeDotSegments(relative3.path || "");
-        target.query = relative3.query;
+      if (relative4.userinfo !== undefined || relative4.host !== undefined || relative4.port !== undefined) {
+        target.userinfo = relative4.userinfo;
+        target.host = relative4.host;
+        target.port = relative4.port;
+        target.path = removeDotSegments(relative4.path || "");
+        target.query = relative4.query;
       } else {
-        if (!relative3.path) {
+        if (!relative4.path) {
           target.path = base.path;
-          if (relative3.query !== undefined) {
-            target.query = relative3.query;
+          if (relative4.query !== undefined) {
+            target.query = relative4.query;
           } else {
             target.query = base.query;
           }
         } else {
-          if (relative3.path[0] === "/") {
-            target.path = removeDotSegments(relative3.path);
+          if (relative4.path[0] === "/") {
+            target.path = removeDotSegments(relative4.path);
           } else {
             if ((base.userinfo !== undefined || base.host !== undefined || base.port !== undefined) && !base.path) {
-              target.path = "/" + relative3.path;
+              target.path = "/" + relative4.path;
             } else if (!base.path) {
-              target.path = relative3.path;
+              target.path = relative4.path;
             } else {
-              target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative3.path;
+              target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative4.path;
             }
             target.path = removeDotSegments(target.path);
           }
-          target.query = relative3.query;
+          target.query = relative4.query;
         }
         target.userinfo = base.userinfo;
         target.host = base.host;
@@ -3599,7 +3599,7 @@ var require_fast_uri = __commonJS((exports, module) => {
       }
       target.scheme = base.scheme;
     }
-    target.fragment = relative3.fragment;
+    target.fragment = relative4.fragment;
     return target;
   }
   function equal(uriA, uriB, options) {
@@ -3777,7 +3777,7 @@ var require_fast_uri = __commonJS((exports, module) => {
     }
     return { parsed, malformedAuthorityOrPort };
   }
-  function parse6(uri, opts) {
+  function parse7(uri, opts) {
     return parseWithStatus(uri, opts).parsed;
   }
   function normalizeString(uri, opts) {
@@ -3802,11 +3802,11 @@ var require_fast_uri = __commonJS((exports, module) => {
   var fastUri = {
     SCHEMES,
     normalize,
-    resolve: resolve6,
+    resolve: resolve5,
     resolveComponent,
     equal,
     serialize,
-    parse: parse6
+    parse: parse7
   };
   module.exports = fastUri;
   module.exports.default = fastUri;
@@ -6873,11 +6873,11 @@ var require_codegen2 = __commonJS((exports) => {
       const rhs = this.rhs === undefined ? "" : ` = ${this.rhs}`;
       return `${varKind} ${this.name}${rhs};` + _n;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       if (!names[this.name.str])
         return;
       if (this.rhs)
-        this.rhs = optimizeExpr(this.rhs, names, constants2);
+        this.rhs = optimizeExpr(this.rhs, names, constants);
       return this;
     }
     get names() {
@@ -6895,10 +6895,10 @@ var require_codegen2 = __commonJS((exports) => {
     render({ _n }) {
       return `${this.lhs} = ${this.rhs};` + _n;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
         return;
-      this.rhs = optimizeExpr(this.rhs, names, constants2);
+      this.rhs = optimizeExpr(this.rhs, names, constants);
       return this;
     }
     get names() {
@@ -6964,8 +6964,8 @@ var require_codegen2 = __commonJS((exports) => {
     optimizeNodes() {
       return `${this.code}` ? this : undefined;
     }
-    optimizeNames(names, constants2) {
-      this.code = optimizeExpr(this.code, names, constants2);
+    optimizeNames(names, constants) {
+      this.code = optimizeExpr(this.code, names, constants);
       return this;
     }
     get names() {
@@ -6995,12 +6995,12 @@ var require_codegen2 = __commonJS((exports) => {
       }
       return nodes.length > 0 ? this : undefined;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       const { nodes } = this;
       let i2 = nodes.length;
       while (i2--) {
         const n = nodes[i2];
-        if (n.optimizeNames(names, constants2))
+        if (n.optimizeNames(names, constants))
           continue;
         subtractNames(names, n.names);
         nodes.splice(i2, 1);
@@ -7057,12 +7057,12 @@ var require_codegen2 = __commonJS((exports) => {
         return;
       return this;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       var _a4;
-      this.else = (_a4 = this.else) === null || _a4 === undefined ? undefined : _a4.optimizeNames(names, constants2);
-      if (!(super.optimizeNames(names, constants2) || this.else))
+      this.else = (_a4 = this.else) === null || _a4 === undefined ? undefined : _a4.optimizeNames(names, constants);
+      if (!(super.optimizeNames(names, constants) || this.else))
         return;
-      this.condition = optimizeExpr(this.condition, names, constants2);
+      this.condition = optimizeExpr(this.condition, names, constants);
       return this;
     }
     get names() {
@@ -7087,10 +7087,10 @@ var require_codegen2 = __commonJS((exports) => {
     render(opts) {
       return `for(${this.iteration})` + super.render(opts);
     }
-    optimizeNames(names, constants2) {
-      if (!super.optimizeNames(names, constants2))
+    optimizeNames(names, constants) {
+      if (!super.optimizeNames(names, constants))
         return;
-      this.iteration = optimizeExpr(this.iteration, names, constants2);
+      this.iteration = optimizeExpr(this.iteration, names, constants);
       return this;
     }
     get names() {
@@ -7128,10 +7128,10 @@ var require_codegen2 = __commonJS((exports) => {
     render(opts) {
       return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
     }
-    optimizeNames(names, constants2) {
-      if (!super.optimizeNames(names, constants2))
+    optimizeNames(names, constants) {
+      if (!super.optimizeNames(names, constants))
         return;
-      this.iterable = optimizeExpr(this.iterable, names, constants2);
+      this.iterable = optimizeExpr(this.iterable, names, constants);
       return this;
     }
     get names() {
@@ -7176,11 +7176,11 @@ var require_codegen2 = __commonJS((exports) => {
       (_b2 = this.finally) === null || _b2 === undefined || _b2.optimizeNodes();
       return this;
     }
-    optimizeNames(names, constants2) {
+    optimizeNames(names, constants) {
       var _a4, _b2;
-      super.optimizeNames(names, constants2);
-      (_a4 = this.catch) === null || _a4 === undefined || _a4.optimizeNames(names, constants2);
-      (_b2 = this.finally) === null || _b2 === undefined || _b2.optimizeNames(names, constants2);
+      super.optimizeNames(names, constants);
+      (_a4 = this.catch) === null || _a4 === undefined || _a4.optimizeNames(names, constants);
+      (_b2 = this.finally) === null || _b2 === undefined || _b2.optimizeNames(names, constants);
       return this;
     }
     get names() {
@@ -7454,7 +7454,7 @@ var require_codegen2 = __commonJS((exports) => {
   function addExprNames(names, from) {
     return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
   }
-  function optimizeExpr(expr, names, constants2) {
+  function optimizeExpr(expr, names, constants) {
     if (expr instanceof code_1.Name)
       return replaceName(expr);
     if (!canOptimize(expr))
@@ -7469,14 +7469,14 @@ var require_codegen2 = __commonJS((exports) => {
       return items;
     }, []));
     function replaceName(n) {
-      const c = constants2[n.str];
+      const c = constants[n.str];
       if (c === undefined || names[n.str] !== 1)
         return n;
       delete names[n.str];
       return c;
     }
     function canOptimize(e) {
-      return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants2[c.str] !== undefined);
+      return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants[c.str] !== undefined);
     }
   }
   function subtractNames(names, from) {
@@ -9339,7 +9339,7 @@ var require_compile2 = __commonJS((exports) => {
     const schOrFunc = root.refs[ref];
     if (schOrFunc)
       return schOrFunc;
-    let _sch = resolve6.call(this, root, ref);
+    let _sch = resolve5.call(this, root, ref);
     if (_sch === undefined) {
       const schema = (_a4 = root.localRefs) === null || _a4 === undefined ? undefined : _a4[ref];
       const { schemaId } = this.opts;
@@ -9366,7 +9366,7 @@ var require_compile2 = __commonJS((exports) => {
   function sameSchemaEnv(s1, s2) {
     return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
   }
-  function resolve6(root, ref) {
+  function resolve5(root, ref) {
     let sch;
     while (typeof (sch = this.refs[ref]) == "string")
       ref = sch;
@@ -12068,16 +12068,288 @@ var require_dist = __commonJS((exports, module) => {
   exports.default = formatsPlugin;
 });
 
-// cli/src/index.ts
-import { appendFile } from "node:fs/promises";
-import { createHash as createHash7, randomBytes as randomBytes6 } from "node:crypto";
-import { hostname as hostname3 } from "node:os";
+// runtime/src/main.ts
+import { hostname as hostname4 } from "node:os";
 
-// cli/src/daemon.ts
-import { createHash as createHash5, randomBytes as randomBytes5 } from "node:crypto";
-import { spawnSync as spawnSync3 } from "node:child_process";
-import { existsSync as existsSync7 } from "node:fs";
-import { rename as rename5, unlink as unlink3 } from "node:fs/promises";
+// runtime/src/client.ts
+import { createHash as createHash2, randomBytes as randomBytes2 } from "node:crypto";
+import { hostname } from "node:os";
+
+// runtime/src/paths.ts
+import { createHash, randomBytes } from "node:crypto";
+import {
+  chmod,
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  stat,
+  writeFile
+} from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
+var maxSessionFiles = 100;
+var maxPushFiles = 32;
+var stateTtlMs = 30 * 24 * 60 * 60000;
+function criticHome() {
+  return process.env.CRITIC_DATA_DIR || join(homedir(), ".critic", "v3");
+}
+function providerDirectory(provider) {
+  return join(criticHome(), provider);
+}
+function configPath(provider) {
+  return join(providerDirectory(provider), "auth.json");
+}
+function connectorPath(provider) {
+  return join(providerDirectory(provider), "connector.json");
+}
+function sessionDirectory(provider) {
+  return join(providerDirectory(provider), "sessions");
+}
+function pushDirectory(provider) {
+  return join(providerDirectory(provider), "pushes");
+}
+function unavailableRepositoryDirectory(provider) {
+  return join(providerDirectory(provider), "unavailable");
+}
+function onboardingDirectory(provider) {
+  return join(providerDirectory(provider), "onboarding");
+}
+function fileKey(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+async function ensureDirectory(path) {
+  await mkdir(path, { recursive: true, mode: 448 });
+  await chmod(path, 448);
+}
+async function atomicJson(path, value) {
+  await ensureDirectory(join(path, ".."));
+  const temporary = `${path}.${process.pid}.${randomBytes(6).toString("hex")}`;
+  await writeFile(temporary, `${JSON.stringify(value)}
+`, {
+    encoding: "utf8",
+    mode: 384
+  });
+  await chmod(temporary, 384);
+  await rename(temporary, path);
+}
+async function readJson(path) {
+  const contents = await readFile(path, "utf8").catch((error) => {
+    if (error.code === "ENOENT")
+      return null;
+    throw error;
+  });
+  if (!contents)
+    return null;
+  try {
+    return JSON.parse(contents);
+  } catch {
+    return null;
+  }
+}
+async function prune(directory, maximum, now = Date.now()) {
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+  const files = (await Promise.all(entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json")).map(async (entry) => {
+    const path = join(directory, entry.name);
+    const metadata = await stat(path).catch(() => null);
+    return metadata ? { path, mtimeMs: metadata.mtimeMs } : null;
+  }))).filter((entry) => Boolean(entry)).sort((left, right) => right.mtimeMs - left.mtimeMs);
+  await Promise.all(files.filter((entry, index) => index >= maximum || now - entry.mtimeMs > stateTtlMs).map((entry) => rm(entry.path, { force: true })));
+}
+async function loadConfig(provider) {
+  const config = await readJson(configPath(provider));
+  return config?.version === 1 && config.provider === provider ? config : null;
+}
+async function saveConfig(config) {
+  await atomicJson(configPath(config.provider), config);
+}
+async function removeProviderState(provider) {
+  await rm(providerDirectory(provider), { recursive: true, force: true });
+}
+async function loadConnector(provider) {
+  const descriptor = await readJson(connectorPath(provider));
+  return descriptor?.version === 1 && descriptor.provider === provider ? descriptor : null;
+}
+async function saveConnector(descriptor) {
+  await atomicJson(connectorPath(descriptor.provider), descriptor);
+}
+async function clearConnector(provider, runtimeInstanceId) {
+  if (runtimeInstanceId) {
+    const current = await loadConnector(provider);
+    if (current?.runtimeInstanceId !== runtimeInstanceId)
+      return;
+  }
+  await rm(connectorPath(provider), { force: true });
+}
+async function loadSession(provider, sessionId) {
+  const record = await readJson(join(sessionDirectory(provider), `${fileKey(sessionId)}.json`));
+  return record?.version === 1 && record.provider === provider && record.sessionId === sessionId ? record : null;
+}
+async function saveSession(record) {
+  const directory = sessionDirectory(record.provider);
+  await ensureDirectory(directory);
+  await atomicJson(join(directory, `${fileKey(record.sessionId)}.json`), record);
+  await prune(directory, maxSessionFiles);
+}
+async function listSessions(provider) {
+  const directory = sessionDirectory(provider);
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+  const records = await Promise.all(entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json")).map((entry) => readJson(join(directory, entry.name))));
+  return records.filter((record) => record?.version === 1 && record.provider === provider && Date.now() - record.updatedAt <= stateTtlMs).sort((left, right) => right.updatedAt - left.updatedAt).slice(0, maxSessionFiles);
+}
+async function savePush(provider, receipt) {
+  const directory = pushDirectory(provider);
+  await ensureDirectory(directory);
+  await atomicJson(join(directory, `${fileKey(receipt.commandId)}.json`), receipt);
+  await prune(directory, maxPushFiles);
+}
+async function listPushes(provider) {
+  const directory = pushDirectory(provider);
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+  const receipts = await Promise.all(entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json")).map((entry) => readJson(join(directory, entry.name))));
+  return receipts.filter((receipt) => receipt?.version === 1 && Date.now() - receipt.updatedAt <= stateTtlMs);
+}
+async function removePush(provider, commandId) {
+  await rm(join(pushDirectory(provider), `${fileKey(commandId)}.json`), {
+    force: true
+  });
+}
+async function ensureRuntimeDirectories(provider) {
+  await Promise.all([
+    ensureDirectory(providerDirectory(provider)),
+    ensureDirectory(sessionDirectory(provider)),
+    ensureDirectory(pushDirectory(provider)),
+    ensureDirectory(unavailableRepositoryDirectory(provider)),
+    ensureDirectory(onboardingDirectory(provider))
+  ]);
+}
+
+// runtime/src/client.ts
+function endpoint(serviceUrl) {
+  return `${serviceUrl.replace(/\/$/, "")}/agent`;
+}
+function createAgentClient(config) {
+  return async (action, payload = {}) => {
+    const response = await fetch(endpoint(config.serviceUrl), {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${config.authToken}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ action, ...payload })
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok || !body?.ok) {
+      throw new Error(body?.error || `Critic request failed (${response.status})`);
+    }
+    return body.result;
+  };
+}
+async function pairDevice(input) {
+  const url = new URL(input.serviceUrl);
+  if (url.protocol !== "https:" && url.hostname !== "localhost") {
+    throw new Error("Critic requires an HTTPS service URL");
+  }
+  const authToken = `critic_v3_${randomBytes2(32).toString("base64url")}`;
+  const response = await fetch(endpoint(input.serviceUrl), {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${input.pairingToken}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      action: "pair",
+      deviceKeyHash: createHash2("sha256").update(authToken).digest("hex")
+    })
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok || !body?.ok || !body.result) {
+    throw new Error(body?.error || "Critic could not pair this device");
+  }
+  if (body.result.agent !== input.provider) {
+    throw new Error(`This pairing request is for ${body.result.agent}, not ${input.provider}`);
+  }
+  const config = {
+    version: 1,
+    provider: input.provider,
+    serviceUrl: input.serviceUrl.replace(/\/$/, ""),
+    authToken,
+    deviceId: body.result.deviceId,
+    deviceName: input.deviceName || hostname(),
+    connectedAt: Date.now()
+  };
+  await saveConfig(config);
+  return config;
+}
+async function uploadChunk(ticket, bytes) {
+  const response = await fetch(ticket.uploadUrl, {
+    method: "POST",
+    headers: { "content-type": "application/gzip" },
+    body: Buffer.from(bytes)
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok || !body?.storageId) {
+    throw new Error(`Critic snapshot upload failed (${response.status})`);
+  }
+  return { uploadId: ticket.uploadId, storageId: body.storageId };
+}
+async function publishSnapshot(snapshot, sourceSessionId, agentCall) {
+  if (!snapshot.files.length) {
+    await agentCall("clear_local_snapshot", {
+      sourceSessionId,
+      workspaceFingerprint: snapshot.workspaceFingerprint
+    });
+    return null;
+  }
+  const files = snapshot.files.map(({ compressed: _compressed, ...file }) => file);
+  const begun = await agentCall("begin_local_snapshot", {
+    sourceSessionId,
+    workspaceName: snapshot.workspaceName,
+    workspaceFingerprint: snapshot.workspaceFingerprint,
+    branch: snapshot.branch,
+    baseSha: snapshot.baseSha,
+    headSha: snapshot.headSha,
+    snapshotSha: snapshot.snapshotSha,
+    digest: snapshot.digest,
+    patchDigest: snapshot.patchDigest,
+    manifestVersion: snapshot.manifestVersion,
+    kind: snapshot.kind,
+    commitSubject: snapshot.commitSubject,
+    commitAuthorName: snapshot.commitAuthorName,
+    committedAt: snapshot.committedAt,
+    worktreeClean: snapshot.worktreeClean,
+    rawBytes: snapshot.rawBytes,
+    compressedBytes: snapshot.compressedBytes,
+    files
+  });
+  if (begun.status === "ignored")
+    return null;
+  if (begun.status === "ready")
+    return begun;
+  if (!begun.snapshotId) {
+    throw new Error("Critic did not create a local snapshot");
+  }
+  const byDigest = new Map(snapshot.files.flatMap((file) => file.chunkDigest && file.compressed ? [[file.chunkDigest, file.compressed]] : []));
+  const uploads = [];
+  for (const ticket of begun.uploads) {
+    const bytes = byDigest.get(ticket.digest);
+    if (!bytes)
+      throw new Error("Critic requested an unknown snapshot chunk");
+    uploads.push(await uploadChunk(ticket, bytes));
+  }
+  return await agentCall("finalize_local_snapshot", {
+    sourceSessionId,
+    workspaceFingerprint: snapshot.workspaceFingerprint,
+    snapshotId: begun.snapshotId,
+    uploads
+  });
+}
+
+// runtime/src/connector.ts
+import { createHash as createHash9, randomBytes as randomBytes8, randomUUID } from "node:crypto";
+import { createServer } from "node:http";
+import { once } from "node:events";
 // node_modules/convex/dist/esm/browser/simple_client-node.js
 import { createRequire } from "module";
 import { resolve as nodePathResolve } from "path";
@@ -14956,8 +15228,8 @@ class BaseConvexClient {
     if (timeOfOldestRequest === null || Date.now() - timeOfOldestRequest.getTime() <= 60 * 1000) {
       return;
     }
-    const endpoint = `${this.address}/api/debug_event`;
-    fetch(endpoint, {
+    const endpoint2 = `${this.address}/api/debug_event`;
+    fetch(endpoint2, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -16049,9 +16321,9 @@ var require_permessage_deflate = __commonJS2({
         });
       }
       _decompress(data, fin, callback) {
-        const endpoint = this._isServer ? "client" : "server";
+        const endpoint2 = this._isServer ? "client" : "server";
         if (!this._inflate) {
-          const key = `${endpoint}_max_window_bits`;
+          const key = `${endpoint2}_max_window_bits`;
           const windowBits = typeof this.params[key] !== "number" ? zlib.Z_DEFAULT_WINDOWBITS : this.params[key];
           this._inflate = zlib.createInflateRaw({
             ...this._options.zlibInflateOptions,
@@ -16082,7 +16354,7 @@ var require_permessage_deflate = __commonJS2({
           } else {
             this._inflate[kTotalLength] = 0;
             this._inflate[kBuffers] = [];
-            if (fin && this.params[`${endpoint}_no_context_takeover`]) {
+            if (fin && this.params[`${endpoint2}_no_context_takeover`]) {
               this._inflate.reset();
             }
           }
@@ -16090,9 +16362,9 @@ var require_permessage_deflate = __commonJS2({
         });
       }
       _compress(data, fin, callback) {
-        const endpoint = this._isServer ? "server" : "client";
+        const endpoint2 = this._isServer ? "server" : "client";
         if (!this._deflate) {
-          const key = `${endpoint}_max_window_bits`;
+          const key = `${endpoint2}_max_window_bits`;
           const windowBits = typeof this.params[key] !== "number" ? zlib.Z_DEFAULT_WINDOWBITS : this.params[key];
           this._deflate = zlib.createDeflateRaw({
             ...this._options.zlibDeflateOptions,
@@ -16115,7 +16387,7 @@ var require_permessage_deflate = __commonJS2({
           this._deflate[kCallback] = null;
           this._deflate[kTotalLength] = 0;
           this._deflate[kBuffers] = [];
-          if (fin && this.params[`${endpoint}_no_context_takeover`]) {
+          if (fin && this.params[`${endpoint2}_no_context_takeover`]) {
             this._deflate.reset();
           }
           callback(null, data2);
@@ -17410,7 +17682,7 @@ var require_websocket = __commonJS2({
     var http = __require("http");
     var net = __require("net");
     var tls = __require("tls");
-    var { randomBytes, createHash } = __require("crypto");
+    var { randomBytes: randomBytes3, createHash: createHash3 } = __require("crypto");
     var { Duplex, Readable } = __require("stream");
     var { URL: URL2 } = __require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -17825,7 +18097,7 @@ var require_websocket = __commonJS2({
         }
       }
       const defaultPort = isSecure ? 443 : 80;
-      const key = randomBytes(16).toString("base64");
+      const key = randomBytes3(16).toString("base64");
       const request = isSecure ? https.request : http.request;
       const protocolSet = /* @__PURE__ */ new Set;
       let perMessageDeflate;
@@ -17952,7 +18224,7 @@ var require_websocket = __commonJS2({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest = createHash("sha1").update(key + GUID).digest("base64");
+        const digest = createHash3("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -18327,7 +18599,7 @@ var require_websocket_server = __commonJS2({
     var EventEmitter = __require("events");
     var http = __require("http");
     var { Duplex } = __require("stream");
-    var { createHash } = __require("crypto");
+    var { createHash: createHash3 } = __require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -18541,7 +18813,7 @@ var require_websocket_server = __commonJS2({
         }
         if (this._state > RUNNING)
           return abortHandshake(socket, 503);
-        const digest = createHash("sha1").update(key + GUID).digest("base64");
+        const digest = createHash3("sha1").update(key + GUID).digest("base64");
         const headers = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
@@ -18642,1132 +18914,1753 @@ var import_websocket_server = __toESM2(require_websocket_server(), 1);
 var wrapper_default = import_websocket.default;
 var nodeWebSocket = wrapper_default;
 setDefaultWebSocketConstructor(nodeWebSocket);
-// cli/src/agents.ts
-import { randomUUID } from "node:crypto";
-import { spawn, spawnSync } from "node:child_process";
-import {
-  existsSync as existsSync2,
-  lstatSync,
-  mkdirSync,
-  readlinkSync,
-  statSync,
-  symlinkSync,
-  unlinkSync
-} from "node:fs";
-
-// cli/src/version.ts
-var criticPluginVersion = "2.0.0";
-var criticDaemonProtocolVersion = 9;
-var criticHookDefinitionVersion = 2;
-var VERSION_PATTERN = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
-function isCriticVersion(value) {
-  return VERSION_PATTERN.test(value);
-}
-function compareCriticVersions(left, right) {
-  const numeric = (value) => value.split(/[+-]/, 1)[0].split(".").map((part) => Number(part));
-  const leftParts = numeric(left);
-  const rightParts = numeric(right);
-  for (let index = 0;index < 3; index += 1) {
-    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
-    if (difference)
-      return Math.sign(difference);
-  }
-  return left.localeCompare(right);
-}
-
-// cli/src/config.ts
-import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join } from "node:path";
-var configDirectory = join(homedir(), ".critic");
-var configPath = join(configDirectory, "auth.json");
-var daemonDirectory = join(configDirectory, "daemon");
-var stateDirectory = join(configDirectory, "state");
-var onboardingDirectory = join(configDirectory, "onboarding");
-var socketPath = join(configDirectory, "criticd.sock");
-var spoolPath = join(configDirectory, "events.jsonl");
-var daemonLogPath = join(configDirectory, "criticd.log");
-var daemonPidPath = join(configDirectory, "criticd.pid");
-var daemonLeasePath = join(configDirectory, "criticd.lease.json");
-var daemonStartLockPath = join(configDirectory, "criticd.starting");
-var daemonRuntimePath = join(daemonDirectory, "critic.mjs");
-var hookStatePath = join(stateDirectory, "hook-state.json");
-var repositoryRegistryPath = join(stateDirectory, "repository-registry.json");
-var unavailableRepositoryDirectory = join(stateDirectory, "repository-unavailable");
-async function loadConfig() {
-  const contents = await readFile(configPath, "utf8").catch((error) => {
-    if (error.code === "ENOENT")
-      return null;
-    throw error;
-  });
-  return contents ? JSON.parse(contents) : null;
-}
-async function saveConfig(config) {
-  await mkdir(configDirectory, { recursive: true, mode: 448 });
-  await writeFile(configPath, `${JSON.stringify(config, null, 2)}
-`, {
-    mode: 384
-  });
-  await chmod(configPath, 384);
-}
-async function ensureLocalDirectory() {
-  await mkdir(configDirectory, { recursive: true, mode: 448 });
-  await mkdir(daemonDirectory, { recursive: true, mode: 448 });
-  await mkdir(stateDirectory, { recursive: true, mode: 448 });
-  await mkdir(unavailableRepositoryDirectory, {
-    recursive: true,
-    mode: 448
-  });
-  await mkdir(onboardingDirectory, { recursive: true, mode: 448 });
-}
-async function removeLocalInstallation() {
-  await rm(configDirectory, { recursive: true, force: true });
-}
-
-// packages/protocol/src/agent-provider.ts
-var localAgentProviderIds = ["codex", "claude"];
-var localAgentProviderContracts = {
-  codex: {
-    id: "codex",
-    label: "Codex",
-    transport: "local-daemon",
-    conversations: { fork: true, resume: true, rebuild: true },
-    streaming: "text-delta"
-  },
-  claude: {
-    id: "claude",
-    label: "Claude Code",
-    transport: "local-daemon",
-    conversations: { fork: true, resume: true, rebuild: true },
-    streaming: "text-delta"
-  }
-};
-function isLocalAgentProvider(value) {
-  return localAgentProviderIds.includes(value);
-}
-function localAgentProviderContract(id) {
-  return localAgentProviderContracts[id];
-}
-
-// packages/protocol/src/agent-conversation.ts
-function contentText(parts) {
-  return parts.map((part) => part.text).join("");
-}
-
-// cli/src/node-runtime.ts
-import { accessSync, constants, existsSync } from "node:fs";
-import { delimiter, isAbsolute, join as join2, resolve } from "node:path";
-function sleep(milliseconds) {
-  return new Promise((resolveSleep) => {
-    setTimeout(resolveSleep, milliseconds);
-  });
-}
-async function readStream(stream) {
-  let contents = "";
-  stream.setEncoding("utf8");
-  for await (const chunk of stream)
-    contents += String(chunk);
-  return contents;
-}
-async function readStreamBytes(stream) {
-  const chunks = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return new Uint8Array(Buffer.concat(chunks));
-}
-async function readStandardInput() {
-  return await readStream(process.stdin);
-}
-function processEntrypoint() {
-  const entrypoint = process.argv[1];
-  if (!entrypoint)
-    throw new Error("Critic could not identify its entrypoint");
-  return resolve(entrypoint);
-}
-function executablePath(command) {
-  if (isAbsolute(command))
-    return existsSync(command) ? command : undefined;
-  const path = process.env.PATH ?? "";
-  return path.split(delimiter).filter(Boolean).map((directory) => join2(directory, command)).find((candidate) => {
-    try {
-      accessSync(candidate, constants.X_OK);
-      return true;
-    } catch {
-      return false;
+// node_modules/convex/dist/esm/server/components/index.js
+function createChildComponents(root, pathParts) {
+  const handler = {
+    get(_, prop) {
+      if (typeof prop === "string") {
+        const newParts = [...pathParts, prop];
+        return createChildComponents(root, newParts);
+      } else if (prop === toReferencePath) {
+        if (pathParts.length < 1) {
+          const found = [root, ...pathParts].join(".");
+          throw new Error(`API path is expected to be of the form \`${root}.childComponent.functionName\`. Found: \`${found}\``);
+        }
+        return `_reference/childComponent/` + pathParts.join("/");
+      } else {
+        return;
+      }
     }
-  });
+  };
+  return new Proxy({}, handler);
 }
-function waitForChild(child) {
-  if (child.exitCode !== null)
-    return Promise.resolve(child.exitCode);
-  return new Promise((resolveExit, reject) => {
-    child.once("error", reject);
-    child.once("exit", (code2) => resolveExit(code2 ?? 1));
-  });
-}
+var componentsGeneric = () => createChildComponents("components", []);
+// convex/_generated/api.js
+var api = anyApi;
+var components = componentsGeneric();
 
-// cli/src/agents.ts
-class AgentExecutionError extends Error {
+// runtime/src/hooks.ts
+import { createHash as createHash5 } from "node:crypto";
+import { isAbsolute, relative, resolve as resolve2 } from "node:path";
+
+// runtime/src/git.ts
+import { createHash as createHash3 } from "node:crypto";
+import { lstat, realpath, stat as stat2 } from "node:fs/promises";
+import { dirname, join as join2, parse } from "node:path";
+
+// runtime/src/command.ts
+import { spawn } from "node:child_process";
+
+class CommandError extends Error {
+  command;
   code;
-  retryable;
-  providerConversationId;
-  constructor(code2, message, options = {}) {
+  constructor(message, command, code2) {
     super(message);
-    this.name = "AgentExecutionError";
+    this.command = command;
     this.code = code2;
-    this.retryable = options.retryable ?? false;
-    this.providerConversationId = options.providerConversationId;
+    this.name = "CommandError";
   }
 }
-function agentFailureDetails(error) {
-  if (error instanceof AgentExecutionError) {
-    return {
-      code: error.code,
-      retryable: error.retryable,
-      providerConversationId: error.providerConversationId
-    };
-  }
-  return {
-    code: "provider_error",
-    retryable: false,
-    providerConversationId: undefined
-  };
-}
-var conversationInstruction = "This is an isolated Critic discussion. Treat the supplied Critic thread and patchset context as canonical. Use only the Critic repository MCP tools for repository investigation. Native shell, filesystem, network, browser, connector, and write tools are outside the product contract. repo://critic/ is what the reviewer sees; repo://workspace/ may contain upcoming local work. Never describe workspace-only code as already reviewed.";
-var criticPermissionProfile = "critic-explain";
-var AGENT_DEADLINE_MS = 5 * 60000;
-var AGENT_INACTIVITY_MS = 45000;
-var MAX_CODEX_FORK_BYTES = 64 * 1024 * 1024;
-var repositoryToolNames = [
-  "read_file",
-  "list_files",
-  "search",
-  "git_status",
-  "git_history",
-  "git_show",
-  "git_diff",
-  "git_blame"
-];
-var executableCache = new Map;
-function parentAgentExecutable(name) {
-  const result = spawnSync("ps", ["-p", String(process.ppid), "-o", "command="], { cwd: configDirectory, encoding: "utf8" });
-  if (result.status !== 0)
-    return;
-  const command = result.stdout.trim();
-  const executable = command.match(/^\s*(?:"([^"]+)"|'([^']+)'|(\S+))/)?.slice(1).find(Boolean);
-  if (!executable || !existsSync2(executable))
-    return;
-  return executable.split("/").at(-1) === name ? executable : undefined;
-}
-function executableCandidates(name) {
-  const home = process.env.HOME;
-  return [
-    process.env[`CRITIC_${name.toUpperCase()}_EXECUTABLE`],
-    parentAgentExecutable(name),
-    name === "codex" ? "/Applications/ChatGPT.app/Contents/Resources/codex" : undefined,
-    name === "codex" ? "/Applications/Codex.app/Contents/Resources/codex" : undefined,
-    executablePath(name),
-    home ? `${home}/.bun/bin/${name}` : undefined,
-    home ? `${home}/.local/bin/${name}` : undefined,
-    home ? `${home}/Library/pnpm/${name}` : undefined,
-    `/opt/homebrew/bin/${name}`,
-    `/usr/local/bin/${name}`
-  ];
-}
-function shellExecutable(name) {
-  const shell = process.env.SHELL ?? "/bin/sh";
-  const result = spawnSync(shell, ["-lc", `command -v ${name}`], {
-    cwd: configDirectory,
-    encoding: "utf8"
-  });
-  if (result.status !== 0)
-    return;
-  return result.stdout.split(`
-`).map((line) => line.trim()).reverse().find((line) => line.startsWith("/") && existsSync2(line));
-}
-function agentExecutable(name) {
-  const cached = executableCache.get(name);
-  if (cached)
-    return cached;
-  const executable = executableCandidates(name).find((candidate) => Boolean(candidate && existsSync2(candidate))) ?? shellExecutable(name);
-  if (!executable) {
-    const label = name === "codex" ? "Codex" : "Claude Code";
-    throw new AgentExecutionError("agent_unavailable", `${label} could not be opened on the connected device. Reconnect the agent in Critic and try again.`);
-  }
-  executableCache.set(name, executable);
-  return executable;
-}
-function repositoryContextValue(context) {
-  return Buffer.from(JSON.stringify(context)).toString("base64url");
-}
-function runtimeCommand() {
-  const main = processEntrypoint();
-  return main.endsWith(".ts") || main.endsWith(".js") ? { command: process.execPath, args: [main, "repo-mcp"] } : { command: process.execPath, args: ["repo-mcp"] };
-}
-function codexRepositoryServer(request) {
-  const runtime = runtimeCommand();
-  const strings = (values) => `[${values.map((value) => JSON.stringify(value)).join(",")}]`;
-  return `{critic_repository={command=${JSON.stringify(runtime.command)},args=${strings(runtime.args)},env={CRITIC_REPOSITORY_CONTEXT=${JSON.stringify(repositoryContextValue(request.repository))}},enabled_tools=${strings(repositoryToolNames)}}}`;
-}
-function boundedCodexSourceConversation(conversationId) {
-  if (!conversationId)
-    return;
-  const home = process.env.CODEX_HOME ?? `${process.env.HOME}/.codex`;
-  const result = spawnSync("find", [
-    `${home}/sessions`,
-    "-type",
-    "f",
-    "-name",
-    `*-${conversationId}.jsonl`,
-    "-print",
-    "-quit"
-  ], { encoding: "utf8" });
-  if (result.status !== 0)
-    return conversationId;
-  const path = result.stdout.trim();
-  if (!path)
-    return conversationId;
-  try {
-    return statSync(path).size <= MAX_CODEX_FORK_BYTES ? conversationId : undefined;
-  } catch {
-    return conversationId;
-  }
-}
-function codexIsolatedEnvironment() {
-  const sourceHome = process.env.CODEX_HOME ?? `${process.env.HOME}/.codex`;
-  const criticHome = `${process.env.HOME}/.critic/codex`;
-  mkdirSync(criticHome, { recursive: true });
-  const sourceAuth = `${sourceHome}/auth.json`;
-  const criticAuth = `${criticHome}/auth.json`;
-  if (existsSync2(sourceAuth)) {
-    try {
-      if (!lstatSync(criticAuth).isSymbolicLink() || readlinkSync(criticAuth) !== sourceAuth) {
-        unlinkSync(criticAuth);
-        symlinkSync(sourceAuth, criticAuth);
-      }
-    } catch {
-      symlinkSync(sourceAuth, criticAuth);
+function safeGitEnvironment(additions = {}) {
+  const environment = { ...process.env };
+  for (const key of Object.keys(environment)) {
+    if (key === "GIT_DIR" || key === "GIT_COMMON_DIR" || key === "GIT_WORK_TREE" || key === "GIT_INDEX_FILE" || key === "GIT_OBJECT_DIRECTORY" || key === "GIT_ALTERNATE_OBJECT_DIRECTORIES" || key === "GIT_CONFIG_COUNT" || key === "GIT_CONFIG_PARAMETERS" || key === "GIT_SHALLOW_FILE" || /^GIT_CONFIG_(?:KEY|VALUE)_\d+$/.test(key)) {
+      delete environment[key];
     }
   }
   return {
-    ...process.env,
-    CODEX_HOME: criticHome,
-    CODEX_SQLITE_HOME: sourceHome
+    ...environment,
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_NO_REPLACE_OBJECTS: "1",
+    GIT_OPTIONAL_LOCKS: "0",
+    GIT_PAGER: "cat",
+    GIT_TERMINAL_PROMPT: "0",
+    ...additions
   };
 }
-function codexCommand(request, executable = agentExecutable("codex")) {
-  const args = [
-    executable,
-    "app-server",
-    "-c",
-    'web_search="disabled"',
-    "-c",
-    "features.shell_tool=false",
-    "-c",
-    "features.unified_exec=false",
-    "-c",
-    "features.apps=false",
-    "-c",
-    "features.multi_agent=false",
-    "-c",
-    "features.code_mode_host=false",
-    "-c",
-    `default_permissions=${JSON.stringify(criticPermissionProfile)}`,
-    "-c",
-    `permissions.${criticPermissionProfile}.filesystem={}`,
-    "-c",
-    `permissions.${criticPermissionProfile}.network={enabled=false}`,
-    "-c",
-    `mcp_servers=${codexRepositoryServer(request)}`
-  ];
-  return args;
-}
-function throwCodexError(message) {
-  if (message.error) {
-    throw new Error(message.error.message ?? "Codex app-server error");
-  }
-  if (message.method === "error" && message.params?.error?.message && !message.params.willRetry) {
-    throw new Error(message.params.error.message);
-  }
-}
-function completedCodexAgentText(message) {
-  if (message.method !== "item/completed")
-    return;
-  if (message.params?.item?.type !== "agentMessage")
-    return;
-  return message.params.item.text;
-}
-function assertCodexTurnSucceeded(message, providerConversationId) {
-  if (message.method !== "turn/completed")
-    return false;
-  const turn = message.params?.turn;
-  if (turn?.status === "completed")
-    return true;
-  if (turn?.status === "interrupted" || turn?.status === "cancelled") {
-    throw new AgentExecutionError("provider_interrupted", "Codex stopped before answering this question.", { retryable: true, providerConversationId });
-  }
-  throw new AgentExecutionError("provider_error", turn?.error?.message ?? "Codex could not answer this question.", { providerConversationId });
-}
-function appendCodexAgentText(state, text) {
-  if (!text)
-    return;
-  if (!state.activeAgentMessage && state.completedAgentMessages > 0) {
-    state.answer += `
-`;
-    state.request.onDelta?.(`
-`);
-  }
-  state.activeAgentMessage += text;
-  state.answer += text;
-  state.request.onDelta?.(text);
-}
-function completeCodexAgentMessage(state, text) {
-  if (!state.activeAgentMessage) {
-    appendCodexAgentText(state, text);
-  } else if (text && text !== state.activeAgentMessage) {
-    state.answer = `${state.answer.slice(0, -state.activeAgentMessage.length)}${text}`;
-  }
-  state.activeAgentMessage = "";
-  state.completedAgentMessages += 1;
-}
-function handleCodexMessage(message, state) {
-  throwCodexError(message);
-  if (message.method === "mcpServer/elicitation/request") {
-    state.send({
-      id: message.id,
-      result: message.params?.serverName === "critic_repository" ? { action: "accept", content: {} } : { action: "decline" }
-    });
-    return false;
-  }
-  if (message.method === undefined && message.id === 0) {
-    state.send({ method: "initialized", params: {} });
-    const method = state.request.providerConversationId ? "thread/resume" : state.request.sourceConversationId ? "thread/fork" : "thread/start";
-    state.send({
-      method,
-      id: 1,
-      params: {
-        permissions: criticPermissionProfile,
-        ...state.request.providerConversationId ? { threadId: state.request.providerConversationId } : state.request.sourceConversationId ? {
-          threadId: state.request.sourceConversationId,
-          cwd: state.request.cwd,
-          ephemeral: false
-        } : { cwd: state.request.cwd, ephemeral: false },
-        approvalPolicy: "never",
-        developerInstructions: conversationInstruction
-      }
-    });
-    return false;
-  }
-  if (message.method === undefined && message.id === 1) {
-    state.threadId = message.result?.thread?.id ?? state.threadId;
-    const activeProfile = message.result?.activePermissionProfile?.id;
-    if (activeProfile !== criticPermissionProfile) {
-      throw new AgentExecutionError("permission_profile_mismatch", `Codex did not activate Critic's repository boundary (active profile: ${activeProfile ?? "unknown"}). Remove legacy sandbox_mode overrides and reconnect Critic.`, { providerConversationId: state.threadId });
-    }
-    if (!state.threadId)
-      throw new Error("Codex did not return a thread");
-    state.send({
-      method: "turn/start",
-      id: 2,
-      params: {
-        threadId: state.threadId,
-        input: [
-          ...state.request.input.map((part) => ({
-            type: "text",
-            text: part.text,
-            text_elements: []
-          }))
-        ]
-      }
-    });
-    return false;
-  }
-  if (message.method === "item/agentMessage/delta") {
-    const delta = message.params?.delta ?? "";
-    appendCodexAgentText(state, delta);
-    return false;
-  }
-  const completedText = completedCodexAgentText(message);
-  if (completedText !== undefined) {
-    completeCodexAgentMessage(state, completedText);
-    return false;
-  }
-  return assertCodexTurnSucceeded(message, state.threadId);
-}
-async function answerWithCodex(request) {
-  const boundedRequest = {
-    ...request,
-    sourceConversationId: boundedCodexSourceConversation(request.sourceConversationId)
-  };
-  const [command, ...args] = codexCommand(boundedRequest);
-  const child = spawn(command, args, {
-    cwd: boundedRequest.cwd,
-    env: codexIsolatedEnvironment(),
+async function runCommand(command, options) {
+  const accepted = options.accepted ?? [0];
+  const maxBytes = options.maxBytes ?? 128 * 1024 * 1024;
+  const child = spawn(command[0], command.slice(1), {
+    cwd: options.cwd,
+    env: options.environment ? { ...process.env, ...options.environment } : process.env,
     stdio: ["pipe", "pipe", "pipe"]
   });
-  const stderrText = readStream(child.stderr);
-  let buffer = "";
-  const send = (message) => {
-    child.stdin.write(`${JSON.stringify(message)}
-`);
-  };
-  const state = {
-    answer: "",
-    activeAgentMessage: "",
-    completedAgentMessages: 0,
-    threadId: request.providerConversationId,
-    request: boundedRequest,
-    send
-  };
-  const stop = () => {
-    try {
-      child.kill();
-    } catch {}
-  };
-  return await new Promise((resolve2, reject) => {
-    let settled = false;
-    let inactivityTimeout;
-    const inactive = () => finish(new AgentExecutionError("provider_inactive", "Codex stopped making progress while using Critic repository tools.", { retryable: true, providerConversationId: state.threadId }));
-    const touch = () => {
-      clearTimeout(inactivityTimeout);
-      inactivityTimeout = setTimeout(inactive, AGENT_INACTIVITY_MS);
-    };
-    const finish = (error) => {
-      if (settled)
-        return;
-      settled = true;
-      clearTimeout(inactivityTimeout);
-      clearTimeout(deadline);
-      stop();
-      if (error)
-        reject(error);
-      else if (!state.threadId || !state.answer.trim())
-        reject(new Error("Codex returned no answer"));
-      else
-        resolve2({
-          answer: state.answer.trim(),
-          providerConversationId: state.threadId
-        });
-    };
-    inactivityTimeout = setTimeout(inactive, AGENT_INACTIVITY_MS);
-    const deadline = setTimeout(() => finish(new AgentExecutionError("deadline_exceeded", "Codex took too long to answer this question.", { retryable: true, providerConversationId: state.threadId })), AGENT_DEADLINE_MS);
-    (async () => {
-      try {
-        const decoder = new TextDecoder;
-        for await (const chunk of child.stdout) {
-          buffer += decoder.decode(chunk, { stream: true });
-          const lines = buffer.split(`
-`);
-          buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.trim())
-              continue;
-            touch();
-            const message = JSON.parse(line);
-            if (handleCodexMessage(message, state)) {
-              finish();
-              return;
-            }
-          }
-        }
-        buffer += decoder.decode();
-        for (const line of buffer.split(`
-`)) {
-          if (!line.trim())
-            continue;
-          touch();
-          const message = JSON.parse(line);
-          if (handleCodexMessage(message, state)) {
-            finish();
-            return;
-          }
-        }
-        const stderr = (await stderrText).trim();
-        finish(new AgentExecutionError("provider_interrupted", stderr || "Codex stopped before answering this question.", { retryable: true, providerConversationId: state.threadId }));
-      } catch (error) {
-        finish(error instanceof Error ? error : new Error(String(error)));
-      }
-    })();
-    send({
-      method: "initialize",
-      id: 0,
-      params: {
-        clientInfo: {
-          name: "critic",
-          title: "Critic",
-          version: criticPluginVersion
-        },
-        capabilities: {
-          experimentalApi: true,
-          requestAttestation: false,
-          optOutNotificationMethods: ["item/reasoning/delta"]
-        }
-      }
-    });
-    touch();
-  });
-}
-function claudeMcpConfig(request) {
-  const runtime = runtimeCommand();
-  return JSON.stringify({
-    mcpServers: {
-      critic_repository: {
-        command: runtime.command,
-        args: runtime.args,
-        env: {
-          CRITIC_REPOSITORY_CONTEXT: repositoryContextValue(request.repository)
-        }
-      }
+  const stdout = [];
+  const stderr = [];
+  let bytes = 0;
+  const output = { exceeded: false };
+  const collect = (target) => (chunk) => {
+    bytes += chunk.byteLength;
+    if (bytes > maxBytes) {
+      output.exceeded = true;
+      child.kill("SIGKILL");
+      return;
     }
-  });
-}
-function claudeSessionArgs(request, newSessionId2) {
-  if (request.providerConversationId) {
-    return ["--resume", request.providerConversationId];
-  }
-  if (request.sourceConversationId) {
-    return ["--resume", request.sourceConversationId, "--fork-session"];
-  }
-  return ["--session-id", newSessionId2];
-}
-function claudeCommand(request, newSessionId2 = randomUUID(), executable = agentExecutable("claude")) {
-  return [
-    executable,
-    "--print",
-    ...claudeSessionArgs(request, newSessionId2),
-    "--permission-mode",
-    "dontAsk",
-    "--tools",
-    "",
-    "--mcp-config",
-    claudeMcpConfig(request),
-    "--strict-mcp-config",
-    "--allowedTools",
-    ...repositoryToolNames.map((tool) => `mcp__critic_repository__${tool}`),
-    "--output-format",
-    "stream-json",
-    "--verbose",
-    "--include-partial-messages",
-    "--append-system-prompt",
-    conversationInstruction,
-    contentText(request.input)
-  ];
-}
-function applyClaudeLine(line, state, onDelta) {
-  if (!line.trim())
-    return;
-  const message = JSON.parse(line);
-  if (message.session_id)
-    state.sessionId = message.session_id;
-  const delta = message.type === "stream_event" && message.event?.type === "content_block_delta" ? message.event.delta?.text : undefined;
-  if (delta) {
-    state.streamed = true;
-    state.answer += delta;
-    onDelta?.(delta);
-  }
-  if (message.type !== "result")
-    return;
-  state.sawResult = true;
-  state.resultWasError = message.is_error === true;
-  const result = message.result ?? "";
-  if (!state.streamed && !state.resultWasError)
-    onDelta?.(result);
-  state.answer = result;
-}
-async function answerWithClaude(request) {
-  const newSessionId2 = randomUUID();
-  const args = claudeCommand(request, newSessionId2, agentExecutable("claude"));
-  const [command, ...commandArgs] = args;
-  const child = spawn(command, commandArgs, {
-    cwd: request.cwd,
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-  const stderrText = readStream(child.stderr);
-  const state = {
-    answer: "",
-    streamed: false,
-    sawResult: false,
-    resultWasError: false,
-    sessionId: request.providerConversationId ?? newSessionId2
+    target.push(chunk);
   };
-  let buffer = "";
-  const decoder = new TextDecoder;
-  let timeoutError;
-  let inactivityTimeout;
-  const stop = (error) => {
-    timeoutError = error;
-    try {
-      child.kill();
-    } catch {}
-  };
-  const touch = () => {
-    clearTimeout(inactivityTimeout);
-    inactivityTimeout = setTimeout(() => stop(new AgentExecutionError("provider_inactive", "Claude stopped making progress while using Critic repository tools.", { retryable: true, providerConversationId: state.sessionId })), AGENT_INACTIVITY_MS);
-  };
-  touch();
-  const deadline = setTimeout(() => stop(new AgentExecutionError("deadline_exceeded", "Claude took too long to answer this question.", { retryable: true, providerConversationId: state.sessionId })), AGENT_DEADLINE_MS);
-  for await (const chunk of child.stdout) {
-    touch();
-    buffer += decoder.decode(chunk, { stream: true });
-    const lines = buffer.split(`
-`);
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      applyClaudeLine(line, state, request.onDelta);
-    }
+  child.stdout.on("data", collect(stdout));
+  child.stderr.on("data", collect(stderr));
+  if (options.stdin !== undefined)
+    child.stdin.end(options.stdin);
+  else
+    child.stdin.end();
+  const timeout = setTimeout(() => child.kill("SIGKILL"), options.timeoutMs ?? 30000);
+  const code2 = await new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", (exitCode) => resolve(exitCode ?? -1));
+  }).finally(() => clearTimeout(timeout));
+  const stderrText = Buffer.concat(stderr).toString("utf8").trim();
+  if (output.exceeded) {
+    throw new CommandError(`${command[0]} output exceeded the ${maxBytes} byte limit`, command, code2);
   }
-  buffer += decoder.decode();
-  for (const line of buffer.split(`
-`)) {
-    applyClaudeLine(line, state, request.onDelta);
+  if (!accepted.includes(code2)) {
+    throw new CommandError(stderrText || `${command[0]} exited with ${code2}`, command, code2);
   }
-  const [stderr, exitCode] = await Promise.all([
-    stderrText,
-    waitForChild(child)
-  ]);
-  clearTimeout(inactivityTimeout);
-  clearTimeout(deadline);
-  if (timeoutError)
-    throw timeoutError;
-  if (exitCode !== 0 || state.resultWasError) {
-    throw new AgentExecutionError("provider_error", stderr.trim() || state.answer.trim() || `Claude exited with ${exitCode}`, { providerConversationId: state.sessionId });
-  }
-  if (!state.sawResult) {
-    throw new AgentExecutionError("provider_interrupted", "Claude stopped before answering this question.", { retryable: true, providerConversationId: state.sessionId });
-  }
-  if (!state.answer.trim())
-    throw new Error("Claude returned no answer");
   return {
-    answer: state.answer.trim(),
-    providerConversationId: state.sessionId
+    code: code2,
+    stdout: Buffer.concat(stdout),
+    stderr: stderrText
   };
 }
-var adapters = {
-  codex: {
-    contract: localAgentProviderContract("codex"),
-    answer: answerWithCodex
-  },
-  claude: {
-    contract: localAgentProviderContract("claude"),
-    answer: answerWithClaude
-  }
-};
-function conversationUnavailable(error) {
-  const message = error instanceof Error ? error.message : String(error);
-  return /(?:thread|session|conversation).*(?:not found|does not exist|unavailable|unknown|deleted)|(?:not found|unavailable).*(?:thread|session|conversation)/i.test(message);
-}
-async function answerWithConversationFallback(adapter, request) {
-  const firstRequest = request;
-  const stream = { emitted: false };
-  const onDelta = firstRequest.onDelta ? (delta) => {
-    stream.emitted = true;
-    firstRequest.onDelta?.(delta);
-  } : undefined;
-  try {
-    return await adapter.answer({ ...firstRequest, onDelta });
-  } catch (error) {
-    const hadConversation = Boolean(firstRequest.providerConversationId || firstRequest.sourceConversationId);
-    if (!hadConversation || stream.emitted || !conversationUnavailable(error)) {
-      throw error;
-    }
-    return await adapter.answer({
-      ...request,
-      providerConversationId: undefined,
-      sourceConversationId: undefined
-    });
-  }
-}
-function answerWithAgent(agent, request) {
-  const adapter = adapters[agent];
-  return answerWithConversationFallback(adapter, request);
-}
-async function discardAgentConversation(agent, providerConversationId) {
-  if (!providerConversationId || agent !== "codex")
-    return;
-  const child = spawn(agentExecutable("codex"), ["delete", "--force", providerConversationId], {
-    env: codexIsolatedEnvironment(),
-    stdio: ["ignore", "ignore", "pipe"]
+async function runGit(root, args, options = {}) {
+  return await runCommand([
+    "git",
+    "-c",
+    "core.fsmonitor=false",
+    "-c",
+    "core.hooksPath=/dev/null",
+    "--literal-pathspecs",
+    ...args
+  ], {
+    ...options,
+    cwd: root,
+    environment: safeGitEnvironment(options.environment)
   });
-  const [stderr, exitCode] = await Promise.all([
-    readStream(child.stderr),
-    waitForChild(child)
-  ]);
-  if (exitCode !== 0) {
-    throw new Error(stderr.trim() || `Codex could not discard failed conversation ${providerConversationId}`);
-  }
+}
+async function gitText(root, args, accepted = [0]) {
+  const result = await runGit(root, args, { accepted });
+  return new TextDecoder().decode(result.stdout).trim();
 }
 
-// cli/src/hook-lifecycle.ts
-import { chmod as chmod2, readFile as readFile2, rename, writeFile as writeFile2 } from "node:fs/promises";
-import { resolve as resolve2 } from "node:path";
-var STALE_ONBOARDING_SESSION_MS = 24 * 60 * 60000;
-function onboardingWorkspaceCleanupIsSafe(sessions, workspacePath, now = Date.now()) {
-  const target = resolve2(workspacePath);
-  return sessions.filter((session) => resolve2(session.cwd) === target).every((session) => session.turnState === "idle" || now - session.updatedAt >= STALE_ONBOARDING_SESSION_MS);
+// runtime/src/git.ts
+var maxRepositoryDepth = 64;
+var githubRemote = /^(?:https?:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([^/]+)\/([^/]+?)(?:\.git)?\/?$/;
+async function exists(path) {
+  return await lstat(path).then(() => true).catch((error) => {
+    if (error.code === "ENOENT")
+      return false;
+    throw error;
+  });
 }
-function validAuthoringPush(value) {
-  if (!value || typeof value !== "object")
-    return false;
-  const receipt = value;
-  return [
-    "commandId",
-    "leaseToken",
-    "branch",
-    "expectedDigest",
-    "expectedPatchDigest",
-    "workspaceFingerprint"
-  ].every((key) => typeof receipt[key] === "string" && receipt[key]);
-}
-
-class HookSessionStore {
-  path;
-  sessions = new Map;
-  loaded = false;
-  writeQueue = Promise.resolve();
-  constructor(path) {
-    this.path = path;
-  }
-  async load() {
-    if (this.loaded)
-      return;
-    this.loaded = true;
-    const parsed = await readFile2(this.path, "utf8").then((value) => JSON.parse(value)).catch(() => null);
-    if (!parsed || typeof parsed !== "object")
-      return;
-    const record = parsed;
-    if (![4, 5, 6].includes(record.version) || !Array.isArray(record.sessions)) {
-      return;
-    }
-    for (const candidate of record.sessions) {
-      if (candidate && typeof candidate === "object" && typeof candidate.sessionId === "string" && typeof candidate.cwd === "string" && typeof candidate.updatedAt === "number") {
-        const candidateState = candidate;
-        const state = {
-          ...candidateState,
-          turnState: [5, 6].includes(record.version) && ["unknown", "running", "idle"].includes(candidateState.turnState) ? candidateState.turnState : "unknown",
-          authoringPush: record.version === 6 && validAuthoringPush(candidateState.authoringPush) ? candidateState.authoringPush : undefined
-        };
-        this.sessions.set(state.sessionId, state);
-      }
-    }
-  }
-  get(sessionId) {
-    return this.sessions.get(sessionId);
-  }
-  values() {
-    return [...this.sessions.values()];
-  }
-  async start(input) {
-    await this.load();
-    const existing = this.sessions.get(input.sessionId);
-    const state = existing?.cwd === input.cwd ? {
-      ...existing,
-      headSha: input.headSha,
-      turnState: input.turnState ?? existing.turnState,
-      updatedAt: Date.now()
-    } : {
-      sessionId: input.sessionId,
-      cwd: input.cwd,
-      startedHeadSha: input.headSha,
-      headSha: input.headSha,
-      turnState: input.turnState ?? "unknown",
-      updatedAt: Date.now()
-    };
-    this.sessions.set(input.sessionId, state);
-    await this.persist();
-    return state;
-  }
-  async markTurnIdle(sessionId) {
-    await this.markTurnState(sessionId, "idle");
-  }
-  async markTurnRunning(sessionId, cwd) {
-    await this.load();
-    const existing = this.sessions.get(sessionId);
-    if (!existing) {
-      this.sessions.set(sessionId, {
-        sessionId,
-        cwd,
-        turnState: "running",
-        updatedAt: Date.now()
-      });
-      await this.persist();
-      return;
-    }
-    await this.markTurnState(sessionId, "running");
-  }
-  async markTurnState(sessionId, turnState) {
-    await this.load();
-    const existing = this.sessions.get(sessionId);
-    if (!existing || existing.turnState === turnState)
-      return;
-    this.sessions.set(sessionId, {
-      ...existing,
-      turnState,
-      updatedAt: Date.now()
-    });
-    await this.persist();
-  }
-  async markPublished(sessionId, revision) {
-    await this.load();
-    const existing = this.sessions.get(sessionId);
-    if (!existing || !revision)
-      return;
-    this.sessions.set(sessionId, {
-      ...existing,
-      publishedRevision: revision,
-      updatedAt: Date.now()
-    });
-    await this.persist();
-  }
-  async markAuthoringPush(sessionId, authoringPush) {
-    await this.load();
-    const existing = this.sessions.get(sessionId);
-    if (!existing)
-      return;
-    this.sessions.set(sessionId, {
-      ...existing,
-      authoringPush,
-      updatedAt: Date.now()
-    });
-    await this.persist();
-  }
-  async clearAuthoringPush(sessionId) {
-    await this.load();
-    const existing = this.sessions.get(sessionId);
-    if (!existing?.authoringPush)
-      return;
-    this.sessions.set(sessionId, {
-      ...existing,
-      authoringPush: undefined,
-      updatedAt: Date.now()
-    });
-    await this.persist();
-  }
-  async persist() {
-    const snapshot = {
-      version: 6,
-      sessions: [...this.sessions.values()]
-    };
-    this.writeQueue = this.writeQueue.then(async () => {
-      const temporaryPath = `${this.path}.${process.pid}.tmp`;
-      await writeFile2(temporaryPath, `${JSON.stringify(snapshot)}
-`, {
-        mode: 384
-      });
-      await chmod2(temporaryPath, 384);
-      await rename(temporaryPath, this.path);
-    });
-    await this.writeQueue;
-  }
-}
-
-// cli/src/hook-payload.ts
-function findHookSessionId(value) {
-  if (!value || typeof value !== "object")
+async function findRepositoryRoot(cwd) {
+  let current = await realpath(cwd).catch(() => null);
+  if (!current)
     return null;
-  const record = value;
-  for (const key of ["session_id", "sessionId", "thread_id", "threadId"]) {
-    if (typeof record[key] === "string" && record[key])
-      return record[key];
-  }
-  for (const nested of Object.values(record)) {
-    const found = findHookSessionId(nested);
-    if (found)
-      return found;
+  const root = parse(current).root;
+  for (let depth = 0;depth < maxRepositoryDepth; depth += 1) {
+    if (await exists(join2(current, ".git")))
+      return current;
+    if (current === root)
+      return null;
+    const parent = dirname(current);
+    if (parent === current)
+      return null;
+    current = parent;
   }
   return null;
 }
+function header(status, name) {
+  const prefix = `# ${name} `;
+  return status.split(/\0|\r?\n/).find((line) => line.startsWith(prefix))?.slice(prefix.length);
+}
+async function fingerprintRepository(root) {
+  const result = await runGit(root, ["status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all"], { maxBytes: 64 * 1024 * 1024, timeoutMs: 20000 });
+  const statusText = new TextDecoder().decode(result.stdout);
+  const branchName = header(statusText, "branch.head");
+  const headSha = header(statusText, "branch.oid");
+  const material = statusText.split("\x00").filter((part) => part && !part.startsWith("# "));
+  return {
+    root,
+    branch: branchName && branchName !== "(detached)" ? branchName : "detached",
+    headSha: headSha && headSha !== "(initial)" && !/^0+$/.test(headSha) ? headSha : undefined,
+    status: result.stdout,
+    digest: createHash3("sha256").update(result.stdout).digest("hex"),
+    clean: material.length === 0
+  };
+}
+function parseGitHubRemote(remote) {
+  const match = githubRemote.exec(remote.trim());
+  return match ? { owner: match[1], repository: match[2] } : null;
+}
+async function workspaceFingerprint(root) {
+  const canonical = await realpath(root);
+  const metadata = await stat2(canonical);
+  return createHash3("sha256").update(canonical).update("\x00").update(String(metadata.dev)).update("\x00").update(String(metadata.ino)).digest("hex");
+}
+async function identifyRepository(fingerprint) {
+  const remote = await gitText(fingerprint.root, [
+    "remote",
+    "get-url",
+    "origin"
+  ]);
+  const coordinates = parseGitHubRemote(remote);
+  if (!coordinates) {
+    throw new Error("Critic requires an origin hosted on GitHub for this repository");
+  }
+  return {
+    ...fingerprint,
+    ...coordinates,
+    workspaceFingerprint: await workspaceFingerprint(fingerprint.root)
+  };
+}
+async function resolveBaseSha(root, headSha) {
+  const upstream = await gitText(root, ["rev-parse", "--verify", "--quiet", "@{upstream}"], [0, 1, 128]);
+  const remoteRefs = new Map((await gitText(root, [
+    "for-each-ref",
+    "--format=%(refname) %(objectname)",
+    "refs/remotes/origin"
+  ])).split(/\r?\n/).filter(Boolean).map((line) => {
+    const separator = line.indexOf(" ");
+    return [line.slice(0, separator), line.slice(separator + 1)];
+  }));
+  const candidates = [
+    upstream,
+    remoteRefs.get("refs/remotes/origin/HEAD"),
+    remoteRefs.get("refs/remotes/origin/main"),
+    remoteRefs.get("refs/remotes/origin/master")
+  ];
+  for (const candidate of new Set(candidates.filter((value) => Boolean(value)))) {
+    const mergeBase = await gitText(root, ["merge-base", headSha, candidate], [0, 1, 128]);
+    if (mergeBase)
+      return mergeBase;
+  }
+  const first = await gitText(root, [
+    "rev-list",
+    "--max-parents=0",
+    "--reverse",
+    headSha
+  ]);
+  return first.split(/\r?\n/)[0] || headSha;
+}
 
-// cli/src/hook-spool.ts
-import { access, readFile as readFile3, rename as rename2, unlink, writeFile as writeFile3 } from "node:fs/promises";
-function errorSummary(error) {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.replace(/\s+/g, " ").slice(0, 500);
-}
-function hookReplayFailureIsTerminal(error) {
-  const message = errorSummary(error);
-  return /\bENOENT\b/.test(message) || /uv_cwd/i.test(message) || /authored workspace is no longer available/i.test(message);
-}
-async function replayHookFile(path, handleHook) {
-  if (!await access(path).then(() => true, () => false)) {
-    return true;
+// runtime/src/guidance.ts
+function scope(status) {
+  const paths = status.promotionRequiredFilePaths;
+  if (paths === undefined) {
+    return [
+      "This is an incremental upsert. For the first publication, include one change narrative and one file narrative for every changed path. On later calls, include only explanations that changed. Omitted explanations and their threads remain intact. Use deleteExplanations only for explanations that should be removed."
+    ];
   }
-  const pending = [];
-  for (const line of (await readFile3(path, "utf8")).split(`
-`).filter(Boolean)) {
-    let event;
-    try {
-      const parsed = JSON.parse(line);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("Queued hook is not an object");
+  return [
+    "Critic already carried the exact unaffected file and range explanations from this session’s local publication. Do not rewrite them.",
+    "Publish a fresh change narrative and fresh file narratives only for these affected paths.",
+    paths.length ? paths.map((path) => `- \`${path}\``).join(`
+`) : "- No file narratives are affected."
+  ];
+}
+function publicationGuidance(status) {
+  const target = status.target ?? "github";
+  const label = target === "local" ? "current synchronized local snapshot" : `final pushed patchset${status.changeNumber ? ` of #${status.changeNumber}` : ""}`;
+  return [
+    `Critic requires an explanation checkpoint for the ${label}.`,
+    "",
+    "Continue in this exact authoring task. Do not fork, delegate, or reconstruct the author’s intent in another conversation.",
+    "",
+    `Call critic.publish_patchset exactly once with checkpointToken \`${status.checkpointToken}\` unchanged. This capability is short lived and bound to this account, device, provider session, target, and revision.`,
+    "",
+    ...scope(status),
+    "",
+    "Follow the installed Critic explain-change skill. Write a concise change narrative with clear incoming and outgoing boundaries. Write exactly one useful file narrative for every required changed path. Add range explanations only where a reader would otherwise cross a genuine semantic cliff.",
+    "",
+    "Use complete sentences. Keep every sentence purposeful and state uncertainty instead of inventing intent.",
+    "",
+    "For a meaningful interface change, attach only representative evidence you personally inspected. Only the change narrative may contain media, sharedPreviewUrl, or localPreviewInstructions. A shared preview must be an independently accessible HTTPS URL and never localhost.",
+    "",
+    `Verify every explanation and anchor against the exact ${label}. After publication, return the canonical Critic URL as the primary handoff.`
+  ].join(`
+`);
+}
+function recoveryGuidance(message) {
+  return [
+    `Critic could not verify this authoring checkpoint: ${message}`,
+    "Resolve the concrete connection or repository problem, then finish this same task again. Do not silently substitute a GitHub-only handoff."
+  ].join(`
+`);
+}
+function authoringPushGuidance(branch) {
+  return [
+    "The user selected Push Changes in Critic for this workspace.",
+    "Complete the push in this exact authoring task. Do not fork, resume, or delegate it.",
+    `The current branch is ${branch}.`,
+    "Critic staged the exact approved file manifest. Do not run git add or stage another path.",
+    "Review the staged diff, write an appropriate commit message, commit exactly that change, and push the current branch.",
+    "Set the upstream when one does not exist. Then finish again so Critic can verify the remote HEAD and complete the request.",
+    "If committing or pushing is unsafe, explain the concrete blocker without changing the approved implementation."
+  ].join(`
+`);
+}
+function blockOutput(reason) {
+  return { decision: "block", reason };
+}
+function finalFailureOutput(provider, reason) {
+  return provider === "codex" ? {
+    continue: false,
+    stopReason: reason,
+    systemMessage: reason
+  } : {
+    continue: false,
+    stopReason: reason,
+    systemMessage: reason
+  };
+}
+function sessionStartOutput() {
+  return {
+    hookSpecificOutput: {
+      hookEventName: "SessionStart",
+      additionalContext: "Critic is attached to this exact authoring session. Material changes are synchronized automatically, and this task will receive a publication checkpoint before it can finish. Write the initial explanations here. Reviewer questions run separately."
+    }
+  };
+}
+
+// runtime/src/snapshot.ts
+import { createHash as createHash4 } from "node:crypto";
+import { mkdtemp, readFile as readFile3, rm as rm2 } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, join as join3 } from "node:path";
+import { gzipSync } from "node:zlib";
+
+// packages/protocol/src/effective-patch.ts
+function hasRequiredBlobIdentity(file) {
+  if (file.status === "added")
+    return Boolean(file.newBlobSha);
+  if (file.status === "deleted")
+    return Boolean(file.oldBlobSha);
+  return Boolean(file.oldBlobSha && file.newBlobSha);
+}
+function normalizedFile(file) {
+  return {
+    path: file.path,
+    oldPath: file.oldPath,
+    status: file.status,
+    oldBlobSha: file.oldBlobSha,
+    newBlobSha: file.newBlobSha
+  };
+}
+function effectivePatchManifest(baseSha, files) {
+  if (!baseSha || files.some((file) => !hasRequiredBlobIdentity(file))) {
+    return null;
+  }
+  const normalized = files.map(normalizedFile).sort((left, right) => [
+    left.path,
+    left.oldPath ?? "",
+    left.status,
+    left.oldBlobSha ?? "",
+    left.newBlobSha ?? ""
+  ].join("\x00").localeCompare([
+    right.path,
+    right.oldPath ?? "",
+    right.status,
+    right.oldBlobSha ?? "",
+    right.newBlobSha ?? ""
+  ].join("\x00")));
+  return JSON.stringify({ version: 1, baseSha, files: normalized });
+}
+
+// runtime/src/policy.ts
+import { readFile as readFile2 } from "node:fs/promises";
+import { resolve } from "node:path";
+var privatePathPatterns = [
+  ".criticignore",
+  ".env",
+  ".env.*",
+  "*.pem",
+  "*.key",
+  "*.p12",
+  "*.pfx",
+  "id_rsa",
+  "id_ed25519",
+  "**/.aws/**",
+  "**/.ssh/**",
+  "**/credentials*",
+  "**/secrets.*",
+  "**/.git/**"
+];
+var generatedPatterns = [
+  "**/node_modules/**",
+  "**/.next/**",
+  "**/.nuxt/**",
+  "**/.output/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/coverage/**",
+  "**/target/**",
+  "**/.turbo/**",
+  "**/.cache/**",
+  "**/*.min.js",
+  "**/*.map"
+];
+var secretPatterns = [
+  {
+    label: "private key",
+    expression: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/
+  },
+  { label: "AWS access key", expression: /\bAKIA[0-9A-Z]{16}\b/ },
+  {
+    label: "GitHub token",
+    expression: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,255}\b/
+  },
+  { label: "GitHub token", expression: /\bgithub_pat_[A-Za-z0-9_]{50,255}\b/ },
+  { label: "Slack token", expression: /\bxox[baprs]-[A-Za-z0-9-]{20,255}\b/ },
+  {
+    label: "credential value",
+    expression: /\b(?:api[_-]?key|access[_-]?token|client[_-]?secret|private[_-]?token)\b\s*[:=]\s*["'`]?[A-Za-z0-9_+./=-]{24,}/i
+  }
+];
+var obviousGitHubTokenPlaceholders = new Set([
+  "abcdefghijklmnopqrstuvwxyz0123456789",
+  "abcdefghijklmnopqrstuvwxyz1234567890",
+  "0123456789abcdefghijklmnopqrstuvwxyz"
+]);
+function obviousSecretPlaceholder(value) {
+  const githubToken = value.match(/\b(?:ghp|gho|ghu|ghs|ghr)_([A-Za-z0-9]+)\b/);
+  return Boolean(githubToken && obviousGitHubTokenPlaceholders.has(githubToken[1].toLowerCase()));
+}
+function globExpression(pattern) {
+  const normalized = pattern.replace(/^\/+/, "");
+  const variants = normalized.startsWith("**/") ? [normalized, normalized.slice(3)] : [normalized];
+  const alternatives = variants.flatMap((variant) => {
+    const escaped = variant.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("**", "\x00").replaceAll("*", "[^/]*").replaceAll("\x00", ".*").replaceAll("?", "[^/]");
+    return [escaped, `.*/${escaped}`];
+  });
+  return new RegExp(`^(?:${alternatives.join("|")})(?:/.*)?$`, "i");
+}
+async function excludedPatterns(root) {
+  const custom = await readFile2(resolve(root, ".criticignore"), "utf8").then((contents) => contents.split(/\r?\n/).map((line) => line.trim()).filter((line) => Boolean(line) && !line.startsWith("#") && !line.startsWith("!"))).catch((error) => {
+    if (error.code === "ENOENT")
+      return [];
+    throw error;
+  });
+  return [...privatePathPatterns, ...custom];
+}
+function pathExcluded(path, patterns) {
+  return patterns.some((pattern) => globExpression(pattern).test(path));
+}
+function generatedPath(path) {
+  return generatedPatterns.some((pattern) => globExpression(pattern).test(path));
+}
+function secretFinding(contents) {
+  for (const { label, expression } of secretPatterns) {
+    const matches = contents.matchAll(new RegExp(expression.source, `${expression.flags}g`));
+    for (const match of matches) {
+      if (!obviousSecretPlaceholder(match[0]))
+        return label;
+    }
+  }
+  return;
+}
+
+// runtime/src/snapshot.ts
+var warningCompressedBytes = 25 * 1024 * 1024;
+var maximumCompressedBytes = 100 * 1024 * 1024;
+var maximumRenderablePatchBytes = 8 * 1024 * 1024;
+var maximumCombinedPatchBytes = 256 * 1024 * 1024;
+var maximumChangedFiles = 2000;
+var maximumLocalCommits = 100;
+var snapshotRefLimit = 100;
+var decoder = new TextDecoder;
+
+class SnapshotError extends Error {
+  blocked;
+  constructor(message, blocked = false) {
+    super(message);
+    this.blocked = blocked;
+    this.name = "SnapshotError";
+  }
+}
+function presentBlob(value) {
+  return value && !/^0+$/.test(value) ? value : undefined;
+}
+function parseRawDiff(bytes) {
+  const tokens = decoder.decode(bytes).split("\x00").filter(Boolean);
+  const files = [];
+  for (let index = 0;index < tokens.length; ) {
+    const metadata = tokens[index++] ?? "";
+    const fields = metadata.split(" ");
+    const oldBlobSha = presentBlob(fields[2]);
+    const newBlobSha = presentBlob(fields[3]);
+    const code2 = fields[4] ?? "";
+    if (code2.startsWith("R") || code2.startsWith("C")) {
+      const oldPath = tokens[index++];
+      const path2 = tokens[index++];
+      if (oldPath && path2) {
+        files.push({
+          path: path2,
+          oldPath,
+          status: "renamed",
+          tracked: true,
+          generated: false,
+          oldBlobSha,
+          newBlobSha
+        });
       }
-      event = parsed;
-    } catch (error) {
-      console.error(`[criticd] discarded malformed queued hook: ${errorSummary(error)}`);
       continue;
     }
-    if (!findHookSessionId(event)) {
-      console.error("[criticd] discarded queued hook without a session ID");
+    const path = tokens[index++];
+    if (!path)
       continue;
-    }
-    try {
-      await handleHook(event);
-    } catch (error) {
-      if (!hookReplayFailureIsTerminal(error))
-        pending.push(line);
-      console.error(hookReplayFailureIsTerminal(error) ? `[criticd] discarded queued hook for a missing workspace: ${errorSummary(error)}` : `[criticd] queued hook replay failed: ${errorSummary(error)}`);
+    files.push({
+      path,
+      status: code2.startsWith("A") ? "added" : code2.startsWith("D") ? "deleted" : "modified",
+      tracked: true,
+      generated: false,
+      oldBlobSha,
+      newBlobSha
+    });
+  }
+  return files;
+}
+function lineStats(bytes) {
+  let additions = 0;
+  let deletions = 0;
+  for (const line of decoder.decode(bytes).split(/\r?\n/)) {
+    if (line.startsWith("+") && !line.startsWith("+++"))
+      additions += 1;
+    if (line.startsWith("-") && !line.startsWith("---"))
+      deletions += 1;
+  }
+  return { additions, deletions };
+}
+function binaryPatch(bytes) {
+  if (bytes.includes(0))
+    return true;
+  const text = decoder.decode(bytes);
+  return text.includes(`
+GIT binary patch
+`) || text.includes(`
+Binary files `) || text.startsWith(`GIT binary patch
+`) || text.startsWith("Binary files ");
+}
+async function generatedMetadata(root, candidate) {
+  const bytes = new Uint8Array(await readFile3(join3(root, candidate.path)));
+  const finding = secretFinding(decoder.decode(bytes));
+  if (finding) {
+    throw new SnapshotError(`Critic blocked the local change because ${candidate.path} appears to contain a ${finding}`, true);
+  }
+  const additions = decoder.decode(bytes).split(/\r?\n/).length;
+  return {
+    additions,
+    deletions: 0,
+    binary: bytes.includes(0),
+    rawBytes: bytes.byteLength,
+    compressedBytes: 0,
+    contentDigest: createHash4("sha256").update(bytes).digest("hex"),
+    omissionReason: "generated"
+  };
+}
+async function snapshotFile(root, candidate, patch) {
+  const identities = {
+    oldBlobSha: candidate.oldBlobSha,
+    newBlobSha: candidate.newBlobSha
+  };
+  if (candidate.generated && candidate.status !== "deleted") {
+    return {
+      path: candidate.path,
+      oldPath: candidate.oldPath,
+      status: candidate.status,
+      ...identities,
+      ...await generatedMetadata(root, candidate)
+    };
+  }
+  if (!patch) {
+    throw new SnapshotError(`Critic could not isolate the patch for ${candidate.path}`);
+  }
+  const digest = createHash4("sha256").update(patch).digest("hex");
+  const stats = lineStats(patch);
+  if (binaryPatch(patch)) {
+    return {
+      path: candidate.path,
+      oldPath: candidate.oldPath,
+      status: candidate.status,
+      ...identities,
+      ...stats,
+      binary: true,
+      rawBytes: patch.byteLength,
+      compressedBytes: 0,
+      contentDigest: digest,
+      omissionReason: "binary"
+    };
+  }
+  const finding = secretFinding(decoder.decode(patch));
+  if (finding) {
+    throw new SnapshotError(`Critic blocked the local change because ${candidate.path} appears to contain a ${finding}`, true);
+  }
+  if (patch.byteLength > maximumRenderablePatchBytes) {
+    return {
+      path: candidate.path,
+      oldPath: candidate.oldPath,
+      status: candidate.status,
+      ...identities,
+      ...stats,
+      binary: false,
+      rawBytes: patch.byteLength,
+      compressedBytes: 0,
+      contentDigest: digest,
+      omissionReason: "oversized"
+    };
+  }
+  const compressed = gzipSync(patch, { level: 6 });
+  return {
+    path: candidate.path,
+    oldPath: candidate.oldPath,
+    status: candidate.status,
+    ...identities,
+    ...stats,
+    binary: false,
+    rawBytes: patch.byteLength,
+    compressedBytes: compressed.byteLength,
+    chunkDigest: createHash4("sha256").update(compressed).digest("hex"),
+    compressed
+  };
+}
+async function candidates(root, baseSha, targetSha, patterns) {
+  const [tracked, untracked] = await Promise.all([
+    runGit(root, [
+      "diff",
+      "--raw",
+      "-z",
+      "--full-index",
+      "--find-renames",
+      baseSha,
+      ...targetSha ? [targetSha] : []
+    ], { maxBytes: 32 * 1024 * 1024 }),
+    targetSha ? Promise.resolve({ stdout: new Uint8Array }) : runGit(root, ["ls-files", "-z", "--others", "--exclude-standard"], {
+      maxBytes: 32 * 1024 * 1024
+    })
+  ]);
+  const values = [
+    ...parseRawDiff(tracked.stdout),
+    ...decoder.decode(untracked.stdout).split("\x00").filter(Boolean).map((path) => ({
+      path,
+      status: "added",
+      tracked: false,
+      generated: generatedPath(path)
+    }))
+  ];
+  if (values.length > maximumChangedFiles) {
+    throw new SnapshotError(`Critic blocked this local change because it contains more than ${maximumChangedFiles} changed files`, true);
+  }
+  for (const candidate of values) {
+    if (pathExcluded(candidate.path, patterns)) {
+      throw new SnapshotError(`Critic blocked the local change because ${candidate.path} is excluded from repository access`, true);
     }
   }
-  if (pending.length > 0) {
-    const temporary = `${path}.${process.pid}.tmp`;
-    await writeFile3(temporary, `${pending.join(`
-`)}
-`, { mode: 384 });
-    await rename2(temporary, path);
-    return false;
+  return values;
+}
+async function pruneSnapshotRefs(root, prefix) {
+  const refs = (await gitText(root, [
+    "for-each-ref",
+    "--sort=-refname",
+    "--format=%(refname)",
+    prefix
+  ])).split(/\r?\n/).filter(Boolean);
+  const stale = refs.slice(snapshotRefLimit);
+  if (!stale.length)
+    return;
+  await runGit(root, ["update-ref", "--stdin"], {
+    stdin: stale.map((ref) => `delete ${ref}
+`).join("")
+  });
+}
+function containsAt(bytes, needle, offset) {
+  for (let index = 0;index < needle.length; index += 1) {
+    if (bytes[offset + index] !== needle[index])
+      return false;
   }
-  await unlink(path);
   return true;
 }
-
-// cli/src/git-context.ts
-function coordinates(owner, repository) {
-  if (!owner || !repository)
-    return null;
-  const normalizedRepository = repository.replace(/\.git$/, "");
-  if (!normalizedRepository)
-    return null;
-  return { owner, repository: normalizedRepository };
+function splitCombinedPatch(bytes) {
+  if (!bytes.length)
+    return [];
+  const marker = new TextEncoder().encode("diff --git ");
+  const offsets = [];
+  for (let offset = 0;offset <= bytes.length - marker.length; offset += 1) {
+    if ((offset === 0 || bytes[offset - 1] === 10) && containsAt(bytes, marker, offset)) {
+      offsets.push(offset);
+    }
+  }
+  return offsets.map((offset, index) => bytes.slice(offset, offsets[index + 1] ?? bytes.length));
 }
-function parseGitRemote(remote) {
-  const scp = remote.match(/^(?:[^@\s]+@)?[^:/\s]+:([^/\s]+)\/(.+?)\/?$/);
-  if (scp)
-    return coordinates(scp[1], scp[2]);
+async function combinedPatches(root, baseSha, targetSha, expectedCount) {
+  if (!expectedCount)
+    return [];
+  const result = await runGit(root, ["diff", "--binary", "--no-ext-diff", "--find-renames", baseSha, targetSha], { maxBytes: maximumCombinedPatchBytes });
+  const patches = splitCombinedPatch(result.stdout);
+  if (patches.length !== expectedCount) {
+    throw new SnapshotError("Critic could not map the combined Git patch to its changed files");
+  }
+  return patches;
+}
+async function createSnapshotCommit(root, baseSha, headSha, paths) {
+  const temporary = await mkdtemp(join3(tmpdir(), "critic-v3-snapshot-"));
+  const environment = { GIT_INDEX_FILE: join3(temporary, "index") };
   try {
-    const url = new URL(remote);
-    if (!["http:", "https:", "ssh:", "git:"].includes(url.protocol)) {
-      return null;
+    await runGit(root, ["read-tree", baseSha], { environment });
+    for (let index = 0;index < paths.length; index += 200) {
+      await runGit(root, ["add", "-A", "--", ...paths.slice(index, index + 200)], { environment });
     }
-    const [owner, repository, ...rest] = url.pathname.split("/").filter(Boolean);
-    if (rest.length)
-      return null;
-    return coordinates(owner, repository);
-  } catch {
+    const tree = await gitTextWithEnvironment(root, ["write-tree"], environment);
+    const identity = {
+      ...environment,
+      GIT_AUTHOR_NAME: "Critic",
+      GIT_AUTHOR_EMAIL: "snapshots@critic.run",
+      GIT_AUTHOR_DATE: "@0 +0000",
+      GIT_COMMITTER_NAME: "Critic",
+      GIT_COMMITTER_EMAIL: "snapshots@critic.run",
+      GIT_COMMITTER_DATE: "@0 +0000"
+    };
+    const commit = await gitTextWithEnvironment(root, ["commit-tree", tree, "-p", headSha, "-m", "Critic local snapshot"], identity);
+    return commit;
+  } finally {
+    await rm2(temporary, { recursive: true, force: true });
+  }
+}
+async function saveSnapshotRef(root, workspaceId, digest, commit) {
+  const stamp = String(Date.now()).padStart(13, "0");
+  const prefix = `refs/critic/v3/${workspaceId}`;
+  await runGit(root, ["update-ref", `${prefix}/${stamp}-${digest}`, commit]);
+  await pruneSnapshotRefs(root, prefix);
+}
+async function gitTextWithEnvironment(root, args, environment) {
+  const result = await runGit(root, args, { environment });
+  return decoder.decode(result.stdout).trim();
+}
+async function scanTarget(target) {
+  const workspaceId = await workspaceFingerprint(target.root);
+  const patterns = await excludedPatterns(target.root);
+  const directTargetSha = target.targetSha ?? (target.worktreeClean ? target.headSha : undefined);
+  const initial = await candidates(target.root, target.baseSha, directTargetSha, patterns);
+  const stablePaths = [
+    ...new Set(initial.flatMap((candidate) => candidate.generated ? [] : candidate.oldPath ? [candidate.oldPath, candidate.path] : [candidate.path]))
+  ];
+  const createdSnapshotSha = directTargetSha ? undefined : await createSnapshotCommit(target.root, target.baseSha, target.headSha, stablePaths);
+  const snapshotSha = directTargetSha ?? createdSnapshotSha;
+  const patchCandidates = createdSnapshotSha ? await candidates(target.root, target.baseSha, createdSnapshotSha, patterns) : initial.filter((candidate) => !candidate.generated);
+  const patches = await combinedPatches(target.root, target.baseSha, snapshotSha, patchCandidates.length);
+  const files = [];
+  for (const [index, candidate] of patchCandidates.entries()) {
+    files.push(await snapshotFile(target.root, candidate, patches[index]));
+  }
+  for (const candidate of initial.filter((value) => value.generated)) {
+    files.push(await snapshotFile(target.root, candidate));
+  }
+  const compressedBytes = files.reduce((sum, file) => sum + file.compressedBytes, 0);
+  if (compressedBytes > maximumCompressedBytes) {
+    throw new SnapshotError("Critic blocked the local change because its compressed patch exceeds 100 MB", true);
+  }
+  const manifest = effectivePatchManifest(target.baseSha, files);
+  if (!manifest) {
+    throw new SnapshotError("Critic could not build a complete content identity for this local change");
+  }
+  const patchDigest = createHash4("sha256").update(manifest).digest("hex");
+  const digest = createHash4("sha256").update(target.kind).update("\x00").update(target.headSha).update("\x00").update(patchDigest).digest("hex");
+  if (createdSnapshotSha) {
+    await saveSnapshotRef(target.root, workspaceId, digest, createdSnapshotSha);
+  }
+  return {
+    ...target,
+    workspaceName: basename(target.root) || target.root,
+    workspaceFingerprint: workspaceId,
+    snapshotSha,
+    digest,
+    patchDigest,
+    manifestVersion: 1,
+    rawBytes: files.reduce((sum, file) => sum + file.rawBytes, 0),
+    compressedBytes,
+    warning: compressedBytes > warningCompressedBytes,
+    files
+  };
+}
+async function scanWorkspace(root, branch, headSha, clean, resolvedBaseSha) {
+  return await scanTarget({
+    root,
+    branch,
+    headSha,
+    baseSha: resolvedBaseSha ?? await resolveBaseSha(root, headSha),
+    worktreeClean: clean,
+    kind: "workspace"
+  });
+}
+async function commitTarget(root, branch, revision) {
+  const parents = (await gitText(root, ["rev-list", "--parents", "-n", "1", revision])).split(/\s+/);
+  const baseSha = parents[1];
+  if (!baseSha)
+    return null;
+  const [subject, author, timestamp] = (await gitText(root, ["show", "-s", "--format=%s%x00%an%x00%ct", revision])).split("\x00");
+  return {
+    root,
+    branch,
+    baseSha,
+    headSha: revision,
+    targetSha: revision,
+    worktreeClean: true,
+    kind: "commit",
+    commitSubject: subject || undefined,
+    commitAuthorName: author || undefined,
+    committedAt: timestamp ? Number(timestamp) * 1000 : undefined
+  };
+}
+async function scanUnsyncedCommits(root, branch, headSha, alreadySynced, resolvedBaseSha) {
+  const baseSha = resolvedBaseSha ?? await resolveBaseSha(root, headSha);
+  if (baseSha === headSha)
+    return [];
+  const revisions = (await gitText(root, [
+    "rev-list",
+    "--reverse",
+    "--first-parent",
+    `${baseSha}..${headSha}`
+  ])).split(/\r?\n/).filter(Boolean);
+  if (revisions.length > maximumLocalCommits) {
+    throw new SnapshotError(`Critic blocked local commit history because it exceeds ${maximumLocalCommits} commits`, true);
+  }
+  const snapshots = [];
+  for (const revision of revisions) {
+    if (alreadySynced.has(revision))
+      continue;
+    const target = await commitTarget(root, branch, revision);
+    if (!target)
+      continue;
+    const snapshot = await scanTarget(target);
+    if (snapshot.files.length)
+      snapshots.push(snapshot);
+  }
+  return snapshots;
+}
+
+// runtime/src/version.ts
+var criticPluginVersion = "3.0.0";
+var criticProtocolVersion = 3;
+var criticHookDefinitionVersion = 3;
+
+// runtime/src/connector-control.ts
+import { randomBytes as randomBytes3 } from "node:crypto";
+import { spawn as spawn2 } from "node:child_process";
+import { request } from "node:http";
+import { mkdir as mkdir2, rm as rm3, stat as stat3 } from "node:fs/promises";
+import { join as join4 } from "node:path";
+var controlTimeoutMs = 300;
+var startWaitMs = 750;
+var staleStartLockMs = 5000;
+function delay(milliseconds) {
+  return new Promise((resolve2) => setTimeout(resolve2, milliseconds));
+}
+function controlRequest(descriptor, path, body) {
+  return new Promise((resolve2) => {
+    const call = request({
+      hostname: "127.0.0.1",
+      port: descriptor.port,
+      path,
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${descriptor.controlToken}`,
+        "content-type": "application/json"
+      },
+      timeout: controlTimeoutMs
+    }, (response) => {
+      let responseBody = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        if (responseBody.length < 16384)
+          responseBody += chunk;
+      });
+      response.on("end", () => {
+        if (response.statusCode !== 200) {
+          resolve2(null);
+          return;
+        }
+        try {
+          resolve2(JSON.parse(responseBody));
+        } catch {
+          resolve2(null);
+        }
+      });
+    });
+    call.on("timeout", () => {
+      call.destroy();
+      resolve2(null);
+    });
+    call.on("error", () => resolve2(null));
+    if (body)
+      call.write(JSON.stringify(body));
+    call.end();
+  });
+}
+function runtimeInvocation(provider) {
+  const entrypoint = process.argv[1];
+  if (entrypoint && /\.(?:[cm]?js|ts)$/.test(entrypoint)) {
+    return {
+      command: process.execPath,
+      args: [entrypoint, "connector", "--provider", provider]
+    };
+  }
+  return {
+    command: process.execPath,
+    args: ["connector", "--provider", provider]
+  };
+}
+function startLock(provider) {
+  return join4(providerDirectory(provider), "connector-starting");
+}
+async function acquireStartLock(provider) {
+  const path = startLock(provider);
+  for (let attempt = 0;attempt < 2; attempt += 1) {
+    try {
+      await mkdir2(path, { mode: 448 });
+      return path;
+    } catch (error) {
+      if (error.code !== "EEXIST")
+        throw error;
+      const metadata = await stat3(path).catch(() => null);
+      if (metadata && Date.now() - metadata.mtimeMs <= staleStartLockMs) {
+        return null;
+      }
+      await rm3(path, { recursive: true, force: true });
+    }
+  }
+  return null;
+}
+async function liveConnector(provider) {
+  const descriptor = await loadConnector(provider);
+  if (!descriptor)
+    return null;
+  const live = await controlRequest(descriptor, "/ping");
+  if (!live) {
+    await clearConnector(provider, descriptor.runtimeInstanceId);
     return null;
   }
+  return live;
 }
-
-// cli/src/repository-registry.ts
-import { existsSync as existsSync3 } from "node:fs";
-import { chmod as chmod3, mkdir as mkdir2, readFile as readFile4, rename as rename3, writeFile as writeFile4 } from "node:fs/promises";
-import { dirname } from "node:path";
-
-// cli/src/workspace-identity.ts
-import { createHash } from "node:crypto";
-import { realpathSync } from "node:fs";
-function workspaceFingerprint(root) {
-  return createHash("sha256").update(realpathSync(root)).digest("hex");
-}
-
-// cli/src/repository-registry.ts
-function repositoryKey(owner, repository) {
-  return `${owner.toLowerCase()}/${repository.toLowerCase()}`;
-}
-
-class RepositoryRegistry {
-  statePath;
-  repositories = new Map;
-  loaded = false;
-  writeQueue = Promise.resolve();
-  constructor(statePath) {
-    this.statePath = statePath;
+async function waitForConnector(provider) {
+  const deadline = Date.now() + startWaitMs;
+  while (Date.now() < deadline) {
+    const live = await liveConnector(provider);
+    if (live)
+      return live;
+    await delay(50);
   }
-  async load() {
-    if (this.loaded)
-      return;
-    this.loaded = true;
-    await mkdir2(dirname(this.statePath), { recursive: true, mode: 448 });
-    const state = await readFile4(this.statePath, "utf8").then((value) => JSON.parse(value)).catch(() => null);
-    if (!state)
-      return;
-    if (state.version === 1) {
-      for (const [key, cwd] of Object.entries(state.repositories)) {
-        if (!existsSync3(cwd))
-          continue;
-        this.repositories.set(key, [
-          {
-            cwd,
-            workspaceFingerprint: workspaceFingerprint(cwd),
-            lastSeenAt: 0
-          }
-        ]);
+  return null;
+}
+async function ensureConnector(provider) {
+  if (!await loadConfig(provider))
+    return null;
+  const current = await liveConnector(provider);
+  if (current?.pluginVersion === criticPluginVersion)
+    return current;
+  if (current) {
+    await controlRequest(current, "/shutdown");
+    await delay(50);
+  }
+  const lock = await acquireStartLock(provider);
+  if (!lock)
+    return await waitForConnector(provider);
+  try {
+    const invocation = runtimeInvocation(provider);
+    const child = spawn2(invocation.command, invocation.args, {
+      detached: true,
+      stdio: "ignore",
+      env: {
+        ...process.env,
+        CRITIC_CONNECTOR_NONCE: randomBytes3(16).toString("hex")
       }
-      await this.persist();
-      return;
-    }
-    for (const [key, locations] of Object.entries(state.repositories)) {
-      const available = locations.filter((location) => existsSync3(location.cwd));
-      if (available.length)
-        this.repositories.set(key, available);
-    }
-  }
-  async remember(owner, repository, cwd) {
-    await this.load();
-    const key = repositoryKey(owner, repository);
-    const fingerprint = workspaceFingerprint(cwd);
-    const locations = this.repositories.get(key) ?? [];
-    this.repositories.set(key, [
-      {
-        cwd,
-        workspaceFingerprint: fingerprint,
-        lastSeenAt: Date.now()
-      },
-      ...locations.filter((location) => location.workspaceFingerprint !== fingerprint)
-    ]);
-    await this.persist();
-  }
-  async resolve(owner, repository, preferred) {
-    await this.load();
-    if (preferred && existsSync3(preferred))
-      return preferred;
-    const locations = (this.repositories.get(repositoryKey(owner, repository)) ?? []).filter((location) => existsSync3(location.cwd)).sort((left, right) => right.lastSeenAt - left.lastSeenAt);
-    const source = locations.at(0)?.cwd;
-    if (!source) {
-      throw new Error("The authoring repository is not available locally");
-    }
-    return source;
-  }
-  async resolveWorkspace(fingerprint) {
-    await this.load();
-    const locations = [...this.repositories.values()].flat().filter((location) => location.workspaceFingerprint === fingerprint && existsSync3(location.cwd)).sort((left, right) => right.lastSeenAt - left.lastSeenAt);
-    for (const location of locations) {
-      if (workspaceFingerprint(location.cwd) === fingerprint) {
-        return location.cwd;
-      }
-    }
-    throw new Error("The exact local workspace is not available");
-  }
-  async persist() {
-    const state = {
-      version: 2,
-      repositories: Object.fromEntries(this.repositories)
-    };
-    this.writeQueue = this.writeQueue.then(async () => {
-      const temporaryPath = `${this.statePath}.${process.pid}.tmp`;
-      await writeFile4(temporaryPath, `${JSON.stringify(state)}
-`, {
-        mode: 384
-      });
-      await chmod3(temporaryPath, 384);
-      await rename3(temporaryPath, this.statePath);
     });
-    await this.writeQueue;
+    child.unref();
+    return await waitForConnector(provider);
+  } finally {
+    await rm3(lock, { recursive: true, force: true });
   }
 }
+async function stopConnector(provider) {
+  const current = await liveConnector(provider);
+  if (!current)
+    return false;
+  await controlRequest(current, "/shutdown");
+  return true;
+}
+async function notifyConnectorSession(descriptor, sessionId) {
+  if (!descriptor)
+    return;
+  await controlRequest(descriptor, "/session", { sessionId });
+}
 
-// cli/src/answer-decision.ts
+// runtime/src/hooks.ts
+var publicationToolPattern = /(?:^|__)critic(?:\.|_)?publish_patchset$/;
+var mutationToolPattern = /^(?:Edit|Write|MultiEdit|NotebookEdit|apply_patch)$/i;
+var maximumPublicationContinuations = 2;
+function sessionId(input) {
+  return typeof input.session_id === "string" && input.session_id.trim() ? input.session_id : undefined;
+}
+function hookCwd(input) {
+  return typeof input.cwd === "string" && input.cwd.trim() ? input.cwd : process.cwd();
+}
+function hookDefinitionHash() {
+  return createHash5("sha256").update(`critic-hooks:${criticHookDefinitionVersion}`).digest("hex");
+}
+function insideWorkspace(workspace, cwd) {
+  const child = relative(resolve2(workspace), resolve2(cwd));
+  return !child || !child.startsWith("..") && !isAbsolute(child);
+}
+function output(value) {
+  process.stdout.write(`${JSON.stringify(value)}
+`);
+}
+async function registerSession(identity, event, runtime) {
+  const registration = await runtime.agentCall("session", {
+    owner: identity.owner,
+    repository: identity.repository,
+    branch: identity.branch,
+    headSha: identity.headSha,
+    localSessionId: runtime.sourceSessionId,
+    runtimeInstanceId: runtime.runtimeInstanceId,
+    hookDefinitionHash: hookDefinitionHash(),
+    workingDirectoryFingerprint: identity.workspaceFingerprint,
+    discoverChange: event === "stop",
+    hookEvent: event
+  });
+  const existing = await loadSession(runtime.provider, runtime.sourceSessionId);
+  const record = {
+    version: 1,
+    provider: runtime.provider,
+    sessionId: runtime.sourceSessionId,
+    cwd: identity.root,
+    workspaceFingerprint: identity.workspaceFingerprint,
+    owner: registration.owner,
+    repository: registration.repository,
+    branch: identity.branch,
+    headSha: identity.headSha,
+    fingerprint: identity.digest,
+    syncedFingerprint: existing?.syncedFingerprint,
+    syncedCommitShas: existing?.syncedCommitShas ?? [],
+    publicationAttempts: existing?.publicationAttempts,
+    lastEvent: event,
+    updatedAt: Date.now()
+  };
+  await saveSession(record);
+  await runtime.sessionActive();
+  return record;
+}
+async function publicationStatus(identity, sourceSessionId, agentCall, preferLocal, issueCheckpoint) {
+  return await agentCall("publication_status", {
+    sourceSessionId,
+    headSha: identity.headSha,
+    workspaceFingerprint: identity.workspaceFingerprint,
+    preferLocal,
+    issueCheckpoint
+  });
+}
+async function synchronizeLocal(identity, sourceSessionId, record, agentCall) {
+  if (!identity.headSha) {
+    throw new SnapshotError("The repository has no initial commit, so Critic cannot build a stable local patchset", true);
+  }
+  const synced = new Set(record.syncedCommitShas ?? []);
+  const baseSha = await resolveBaseSha(identity.root, identity.headSha);
+  const commits = await scanUnsyncedCommits(identity.root, identity.branch, identity.headSha, synced, baseSha);
+  for (const commit of commits) {
+    await publishSnapshot(commit, sourceSessionId, agentCall);
+    synced.add(commit.headSha);
+  }
+  const workspace = await scanWorkspace(identity.root, identity.branch, identity.headSha, identity.clean, baseSha);
+  await publishSnapshot(workspace, sourceSessionId, agentCall);
+  const updated = {
+    ...record,
+    syncedCommitShas: [...synced].slice(-100),
+    fingerprint: identity.digest,
+    syncedFingerprint: identity.digest,
+    headSha: identity.headSha,
+    branch: identity.branch,
+    updatedAt: Date.now()
+  };
+  await saveSession(updated);
+  return { workspace, commitCount: commits.length, record: updated };
+}
+async function stageSnapshot(root, paths) {
+  for (let index = 0;index < paths.length; index += 200) {
+    await runGit(root, ["add", "-A", "--", ...paths.slice(index, index + 200)]);
+  }
+}
+async function pendingPushCheckpoint(provider, identity, sourceSessionId, agentCall) {
+  const receipt = (await listPushes(provider)).find((candidate) => candidate.sourceSessionId === sourceSessionId);
+  if (!receipt)
+    return null;
+  const fail = async (message) => {
+    await agentCall("fail_local_push", {
+      commandId: receipt.commandId,
+      leaseToken: receipt.leaseToken,
+      error: message
+    }).catch(() => {
+      return;
+    });
+    await removePush(provider, receipt.commandId);
+    throw new Error(message);
+  };
+  if (receipt.workspaceFingerprint !== identity.workspaceFingerprint) {
+    await fail("The authored workspace identity changed before Push Changes");
+  }
+  if (!identity.clean) {
+    const snapshot = await scanWorkspace(identity.root, identity.branch, identity.headSha, false);
+    if (snapshot.digest !== receipt.expectedDigest) {
+      await fail("Workspace changed since Push Changes was requested. Sync it and try again.");
+    }
+    const paths = [
+      ...new Set(snapshot.files.flatMap((file) => file.oldPath ? [file.oldPath, file.path] : [file.path]))
+    ];
+    await stageSnapshot(identity.root, paths);
+    return blockOutput(authoringPushGuidance(receipt.branch));
+  }
+  const [upstream, snapshotStatus] = await Promise.all([
+    gitText(identity.root, ["rev-parse", "@{upstream}"], [0, 128]),
+    agentCall("local_snapshot_status", {
+      sourceSessionId,
+      workspaceFingerprint: identity.workspaceFingerprint
+    })
+  ]);
+  if (upstream !== identity.headSha || snapshotStatus?.patchDigest !== receipt.expectedPatchDigest) {
+    return blockOutput(authoringPushGuidance(receipt.branch));
+  }
+  await agentCall("complete_local_push", {
+    commandId: receipt.commandId,
+    leaseToken: receipt.leaseToken
+  });
+  await removePush(provider, receipt.commandId);
+  return null;
+}
+function statusNeedsLocalSync(status, identity, record) {
+  return status.target === "local" && (record.syncedFingerprint !== identity.digest || !status.eligible && status.reason !== "no_open_change_for_head");
+}
+function statusVerificationError(status) {
+  if (status.eligible && status.ready === false) {
+    return status.target === "local" ? "the local snapshot is still synchronizing" : "the pushed patchset is still synchronizing";
+  }
+  if (!status.eligible && status.reason && status.reason !== "no_open_change_for_head") {
+    return status.reason;
+  }
+  if (status.eligible && status.ready !== false && !status.published && !status.checkpointToken) {
+    return "the server did not issue a checkpoint capability";
+  }
+  return;
+}
+async function stopCheckpoint(provider, identity, sourceSessionId, record, agentCall) {
+  let status = await publicationStatus(identity, sourceSessionId, agentCall, false, true);
+  let currentRecord = record;
+  const pushCheckpoint = await pendingPushCheckpoint(provider, identity, sourceSessionId, agentCall);
+  if (pushCheckpoint)
+    return pushCheckpoint;
+  if (statusNeedsLocalSync(status, identity, record)) {
+    const synchronized = await synchronizeLocal(identity, sourceSessionId, record, agentCall);
+    currentRecord = synchronized.record;
+    if (!synchronized.workspace.files.length && synchronized.commitCount === 0) {
+      return {};
+    }
+    status = await publicationStatus(identity, sourceSessionId, agentCall, true, true);
+  }
+  if (status.published) {
+    await saveSession({
+      ...currentRecord,
+      publicationAttempts: undefined,
+      updatedAt: Date.now()
+    });
+    return {};
+  }
+  const verificationError = statusVerificationError(status);
+  const revision = status.revision ?? status.headSha ?? identity.digest;
+  const previous = currentRecord.publicationAttempts;
+  const count = previous?.revision === revision ? previous.count + 1 : 1;
+  const attempts = { revision, count, updatedAt: Date.now() };
+  await saveSession({ ...currentRecord, publicationAttempts: attempts });
+  if (verificationError) {
+    const reason = recoveryGuidance(verificationError);
+    return count > maximumPublicationContinuations ? finalFailureOutput(provider, reason) : blockOutput(reason);
+  }
+  if (status.checkpointToken) {
+    const reason = publicationGuidance(status);
+    return count > maximumPublicationContinuations ? finalFailureOutput(provider, recoveryGuidance("the exact revision was not published after two automatic continuation attempts")) : blockOutput(reason);
+  }
+  return {};
+}
+async function resolveIdentity(cwd) {
+  const root = await findRepositoryRoot(cwd);
+  if (!root)
+    return null;
+  return await identifyRepository(await fingerprintRepository(root));
+}
+async function recoverBinding(event, cwd, runtime) {
+  const identity = await resolveIdentity(cwd);
+  if (!identity)
+    return null;
+  return {
+    identity,
+    record: await registerSession(identity, event, runtime)
+  };
+}
+async function handleFastHook(event, input, runtime) {
+  const existing = await loadSession(runtime.provider, runtime.sourceSessionId);
+  const toolName = typeof input.tool_name === "string" ? input.tool_name : "";
+  if (event === "user-prompt-submit" && existing && insideWorkspace(existing.cwd, hookCwd(input))) {
+    return {};
+  }
+  if (event === "post-tool-use" && existing && publicationToolPattern.test(toolName)) {
+    await saveSession({
+      ...existing,
+      publicationAttempts: undefined,
+      lastEvent: event,
+      updatedAt: Date.now()
+    });
+    return {};
+  }
+  if (event === "post-tool-use" && existing && !mutationToolPattern.test(toolName)) {
+    return {};
+  }
+  const binding = await recoverBinding(event, hookCwd(input), runtime);
+  if (!binding)
+    return {};
+  return event === "session-start" ? sessionStartOutput() : {};
+}
+async function handleHook(provider, event, input) {
+  const sourceSessionId = sessionId(input);
+  if (!sourceSessionId) {
+    output(event === "stop" ? finalFailureOutput(provider, "Critic could not identify this provider session.") : {});
+    return;
+  }
+  const root = await findRepositoryRoot(hookCwd(input));
+  if (!root) {
+    output({});
+    return;
+  }
+  const config = await loadConfig(provider);
+  if (!config) {
+    output({});
+    return;
+  }
+  try {
+    const connector = await ensureConnector(provider);
+    const runtimeInstanceId = connector?.runtimeInstanceId ?? `hook-${criticPluginVersion}-${process.pid}`;
+    const agentCall = createAgentClient(config);
+    const sessionActive = () => notifyConnectorSession(connector, sourceSessionId).then(() => {
+      return;
+    });
+    const runtime = {
+      provider,
+      sourceSessionId,
+      runtimeInstanceId,
+      agentCall,
+      sessionActive
+    };
+    if (event !== "stop") {
+      output(await handleFastHook(event, input, runtime));
+      return;
+    }
+    const identity = await identifyRepository(await fingerprintRepository(root));
+    const record = await registerSession(identity, event, runtime);
+    output(await stopCheckpoint(provider, identity, sourceSessionId, record, agentCall));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (event === "stop") {
+      const existing = await loadSession(provider, sourceSessionId);
+      const count = (existing?.publicationAttempts?.count ?? 0) + 1;
+      if (existing) {
+        await saveSession({
+          ...existing,
+          publicationAttempts: {
+            revision: existing.publicationAttempts?.revision ?? existing.fingerprint ?? "unknown",
+            count,
+            updatedAt: Date.now()
+          }
+        });
+      }
+      const reason = recoveryGuidance(message);
+      output(count > maximumPublicationContinuations ? finalFailureOutput(provider, reason) : blockOutput(reason));
+    } else {
+      output({});
+    }
+  }
+}
+function bridgeReport(input) {
+  return {
+    runtimeInstanceId: input.runtimeInstanceId,
+    protocolVersion: criticProtocolVersion,
+    pluginVersion: criticPluginVersion,
+    runtimeVersion: criticPluginVersion,
+    hookDefinitionHash: hookDefinitionHash(),
+    activeSessionIds: input.activeSessionIds
+  };
+}
+
+// runtime/src/media.ts
+import { createHash as createHash6, randomBytes as randomBytes4 } from "node:crypto";
+import { readFile as readFile4, realpath as realpath2 } from "node:fs/promises";
+import { extname, isAbsolute as isAbsolute2, relative as relative2, resolve as resolve3 } from "node:path";
+var mediaLimits = {
+  image: 15 * 1024 * 1024,
+  video: 100 * 1024 * 1024,
+  html: 1024 * 1024
+};
+var mediaTypes = {
+  image: new Set([
+    "image/avif",
+    "image/gif",
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ]),
+  video: new Set(["video/mp4", "video/quicktime", "video/webm"]),
+  html: new Set(["text/html"])
+};
+var typeByExtension = {
+  ".avif": "image/avif",
+  ".gif": "image/gif",
+  ".html": "text/html",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".mov": "video/quicktime",
+  ".mp4": "video/mp4",
+  ".png": "image/png",
+  ".webm": "video/webm",
+  ".webp": "image/webp"
+};
+var htmlPolicy = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline'",
+  "style-src 'unsafe-inline'",
+  "img-src data: blob:",
+  "media-src data: blob:",
+  "font-src data:",
+  "connect-src 'none'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'"
+].join("; ");
+function secureHtml(html) {
+  const head = `<meta http-equiv="Content-Security-Policy" content="${htmlPolicy}"><meta name="viewport" content="width=device-width, initial-scale=1">`;
+  if (/<head(?:\s[^>]*)?>/i.test(html)) {
+    return html.replace(/<head(?:\s[^>]*)?>/i, (match) => `${match}${head}`);
+  }
+  return `<!doctype html><html><head>${head}</head><body>${html}</body></html>`;
+}
+function tokenHash(value) {
+  return createHash6("sha256").update(value).digest("hex");
+}
+async function workspaceFile(path, cwd) {
+  const [root, file] = await Promise.all([
+    realpath2(cwd),
+    realpath2(resolve3(cwd, path))
+  ]);
+  const local = relative2(root, file);
+  if (!local || local.startsWith("..") || isAbsolute2(local)) {
+    throw new Error("Narrative media must be inside the authored workspace");
+  }
+  return new Blob([await readFile4(file)], {
+    type: typeByExtension[extname(file).toLowerCase()] ?? ""
+  });
+}
+async function mediaBody(input, cwd) {
+  if (input.kind === "html") {
+    const value = input.html ?? (input.path ? await (await workspaceFile(input.path, cwd)).text() : "");
+    if (!value.trim())
+      throw new Error("Interactive HTML cannot be empty");
+    return new Blob([secureHtml(value)], { type: "text/html" });
+  }
+  if (!input.path)
+    throw new Error(`Narrative ${input.kind} requires a path`);
+  if (input.html)
+    throw new Error("Inline HTML is only valid for HTML media");
+  return await workspaceFile(input.path, cwd);
+}
+async function upload(input, cwd, agentCall) {
+  const body = await mediaBody(input, cwd);
+  const mimeType = body.type.split(";")[0]?.toLowerCase() ?? "";
+  if (!mediaTypes[input.kind].has(mimeType)) {
+    throw new Error(`Unsupported ${input.kind} type`);
+  }
+  if (body.size < 1 || body.size > mediaLimits[input.kind]) {
+    throw new Error(`Narrative ${input.kind} is empty or too large`);
+  }
+  if (input.kind === "image" && !input.alt?.trim()) {
+    throw new Error("Narrative images require alt text");
+  }
+  const ticket = await agentCall("create_explanation_upload", {
+    kind: input.kind,
+    mimeType,
+    size: body.size,
+    alt: input.alt,
+    caption: input.caption
+  });
+  try {
+    const response = await fetch(ticket.uploadUrl, {
+      method: "POST",
+      headers: { "content-type": mimeType },
+      body
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result?.storageId) {
+      throw new Error(`Narrative media upload failed (${response.status})`);
+    }
+    await agentCall("complete_explanation_upload", {
+      uploadId: ticket.uploadId,
+      storageId: result.storageId
+    });
+    return ticket.uploadId;
+  } catch (error) {
+    await agentCall("discard_explanation_upload", {
+      uploadId: ticket.uploadId
+    }).catch(() => {
+      return;
+    });
+    throw error;
+  }
+}
+async function processMedia(provider, pending, agentCall) {
+  const leaseToken = randomBytes4(32).toString("hex");
+  const leaseHash = tokenHash(leaseToken);
+  let claim = null;
+  try {
+    claim = await agentCall("remote_publication_media_claim", {
+      commandId: pending._id,
+      tokenHash: leaseHash
+    });
+    if (!claim)
+      return;
+    const session = await loadSession(provider, claim.sourceSessionId);
+    if (!session || session.workspaceFingerprint !== claim.workspaceFingerprint) {
+      throw new Error("The exact authored workspace is unavailable for media");
+    }
+    const replacements = [];
+    for (const item of claim.media) {
+      replacements.push({
+        sequence: item.sequence,
+        itemIndex: item.itemIndex,
+        mediaIndex: item.mediaIndex,
+        uploadId: await upload(item.media, session.cwd, agentCall)
+      });
+    }
+    await agentCall("remote_publication_media_complete", {
+      commandId: claim.commandId,
+      tokenHash: leaseHash,
+      replacements
+    });
+  } catch (error) {
+    if (!claim)
+      return;
+    await agentCall("remote_publication_media_fail", {
+      commandId: claim.commandId,
+      tokenHash: leaseHash,
+      error: error instanceof Error ? error.message : String(error)
+    }).catch(() => {
+      return;
+    });
+  }
+}
+function createMediaRunner(provider, agentCall) {
+  const pending = new Map;
+  let running = false;
+  const drain = async () => {
+    if (running)
+      return;
+    running = true;
+    try {
+      while (pending.size) {
+        const item = pending.values().next().value;
+        if (!item)
+          break;
+        pending.delete(item._id);
+        await processMedia(provider, item, agentCall);
+      }
+    } finally {
+      running = false;
+    }
+  };
+  return {
+    update(items) {
+      for (const item of items)
+        pending.set(item._id, item);
+      drain();
+    }
+  };
+}
+
+// runtime/src/onboarding.ts
+import { randomBytes as randomBytes5 } from "node:crypto";
+import { mkdir as mkdir3, realpath as realpath3, rm as rm4, writeFile as writeFile2 } from "node:fs/promises";
+import { join as join5, relative as relative3, resolve as resolve4 } from "node:path";
+var starterFiles = {
+  "package.json": `${JSON.stringify({
+    name: "critic-life",
+    private: true,
+    type: "module",
+    scripts: { test: "bun test" }
+  }, null, 2)}
+`,
+  "src/life.ts": `export type Cell = readonly [number, number]
+
+function key(x: number, y: number) {
+  return \`\${x},\${y}\`
+}
+
+export function nextGeneration(cells: readonly Cell[], width: number, height: number) {
+  const alive = new Set(cells.map(([x, y]) => key(x, y)))
+  const neighbors = new Map<string, number>()
+  for (const [x, y] of cells) {
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        if (dx === 0 && dy === 0) continue
+        const nextX = x + dx
+        const nextY = y + dy
+        if (nextX < 0 || nextX >= width || nextY < 0 || nextY >= height) continue
+        const neighbor = key(nextX, nextY)
+        neighbors.set(neighbor, (neighbors.get(neighbor) ?? 0) + 1)
+      }
+    }
+  }
+  return [...neighbors.entries()].flatMap(([coordinate, count]) => {
+    const [x, y] = coordinate.split(',').map(Number)
+    return count === 3 || (count === 2 && alive.has(coordinate))
+      ? ([[x, y]] as Cell[])
+      : []
+  })
+}
+`,
+  "test/life.test.ts": `import { expect, test } from 'bun:test'
+import { nextGeneration } from '../src/life'
+
+test('a block remains stable', () => {
+  const block = [[1, 1], [1, 2], [2, 1], [2, 2]] as const
+  expect(nextGeneration(block, 5, 5).map(String).sort()).toEqual(
+    block.map(String).sort(),
+  )
+})
+`,
+  "README.md": `# Critic Life
+
+A small onboarding example for Critic.
+`
+};
+async function prepare(provider, claim) {
+  const path = join5(onboardingDirectory(provider), claim.commandId, "critic-life");
+  await rm4(path, { recursive: true, force: true });
+  for (const [relativePath, contents] of Object.entries(starterFiles)) {
+    const target = join5(path, relativePath);
+    await mkdir3(resolve4(target, ".."), { recursive: true, mode: 448 });
+    await writeFile2(target, contents, { mode: 384 });
+  }
+  await runGit(path, ["init", "-b", "main"]);
+  await runGit(path, ["config", "user.name", "Critic Onboarding"]);
+  await runGit(path, ["config", "user.email", "onboarding@critic.run"]);
+  await runGit(path, [
+    "remote",
+    "add",
+    "origin",
+    `https://github.com/${claim.repositoryOwner}/${claim.repositoryName}.git`
+  ]);
+  await runGit(path, ["add", "."]);
+  await runGit(path, ["commit", "-m", "Start Critic onboarding example"]);
+  return {
+    workspacePath: path,
+    workspaceFingerprint: await workspaceFingerprint(path)
+  };
+}
+async function cleanup(provider, workspacePath) {
+  const root = await realpath3(onboardingDirectory(provider));
+  const target = resolve4(workspacePath);
+  const child = relative3(root, target);
+  if (!child || child.startsWith("..") || resolve4(root, child) !== target) {
+    throw new Error("Refusing to remove a workspace outside Critic onboarding");
+  }
+  await rm4(resolve4(target, ".."), { recursive: true, force: true });
+}
+async function workspaceInUse(provider, workspacePath) {
+  const target = resolve4(workspacePath);
+  return (await listSessions(provider)).some((session) => Date.now() - session.updatedAt <= 5 * 60000 && (resolve4(session.cwd) === target || resolve4(session.cwd).startsWith(`${target}/`)));
+}
+function createOnboardingRunner(provider, agentCall) {
+  const pending = new Map;
+  let running = false;
+  let deferredTimer;
+  const drain = async () => {
+    if (running)
+      return;
+    running = true;
+    try {
+      while (pending.size) {
+        const command = pending.values().next().value;
+        if (!command)
+          break;
+        pending.delete(command._id);
+        const leaseToken = randomBytes5(32).toString("hex");
+        let claim = null;
+        try {
+          claim = await agentCall("claim_onboarding_command", { commandId: command._id, leaseToken });
+          if (!claim)
+            continue;
+          if (claim.kind === "cleanup" && claim.workspacePath && await workspaceInUse(provider, claim.workspacePath)) {
+            await agentCall("defer_onboarding_command", {
+              commandId: claim.commandId,
+              leaseToken
+            });
+            pending.set(command._id, command);
+            if (!deferredTimer) {
+              deferredTimer = setTimeout(() => {
+                deferredTimer = undefined;
+                drain();
+              }, 60000);
+              deferredTimer.unref();
+            }
+            break;
+          }
+          const result = claim.kind === "prepare" ? await prepare(provider, claim) : claim.workspacePath ? await cleanup(provider, claim.workspacePath).then(() => ({})) : {};
+          await agentCall("complete_onboarding_command", {
+            commandId: claim.commandId,
+            leaseToken,
+            ...result
+          });
+        } catch (error) {
+          if (!claim)
+            continue;
+          await agentCall("fail_onboarding_command", {
+            commandId: claim.commandId,
+            leaseToken,
+            error: error instanceof Error ? error.message : String(error)
+          }).catch(() => {
+            return;
+          });
+        }
+      }
+    } finally {
+      running = false;
+    }
+  };
+  return {
+    update(commands) {
+      for (const command of commands)
+        pending.set(command._id, command);
+      drain();
+    },
+    stop() {
+      if (deferredTimer)
+        clearTimeout(deferredTimer);
+    }
+  };
+}
+
+// runtime/src/push.ts
+import { randomBytes as randomBytes6 } from "node:crypto";
+async function sessionForClaim(provider, claim) {
+  if (claim.sourceSessionId) {
+    const session = await loadSession(provider, claim.sourceSessionId);
+    if (session?.workspaceFingerprint === claim.workspaceFingerprint) {
+      return session;
+    }
+  }
+  return (await listSessions(provider)).find((session) => session.workspaceFingerprint === claim.workspaceFingerprint);
+}
+async function verifySnapshot(session, claim, agentCall) {
+  const status = await agentCall("local_snapshot_status", {
+    sourceSessionId: session.sessionId,
+    workspaceFingerprint: claim.workspaceFingerprint
+  });
+  if (!status || status.syncState !== "synced" || status.digest !== claim.expectedDigest) {
+    throw new Error("Workspace changed since Push Changes was requested. Sync it and try again.");
+  }
+}
+async function executeCleanPush(session, claim, agentCall) {
+  const identity = await fingerprintRepository(session.cwd);
+  if (!identity.clean || identity.branch !== claim.branch) {
+    throw new Error("Workspace changed since Push Changes was requested. Sync it and try again.");
+  }
+  await verifySnapshot(session, claim, agentCall);
+  await runGit(session.cwd, ["push", "--set-upstream", "origin", "HEAD"]);
+}
+async function processPush(provider, pending, agentCall) {
+  const leaseToken = randomBytes6(32).toString("hex");
+  let claim = null;
+  try {
+    claim = await agentCall("claim_local_push", {
+      commandId: pending._id,
+      leaseToken,
+      sourceSessionId: pending.sourceSessionId
+    });
+    if (!claim)
+      return;
+    const session = await sessionForClaim(provider, claim);
+    if (!session)
+      throw new Error("The exact authored workspace is unavailable");
+    if (claim.worktreeClean) {
+      await executeCleanPush(session, claim, agentCall);
+      await agentCall("complete_local_push", {
+        commandId: claim.commandId,
+        leaseToken
+      });
+      return;
+    }
+    if (!claim.sourceSessionId) {
+      throw new Error("Push Changes requires the exact authored task");
+    }
+    const receipt = {
+      version: 1,
+      commandId: claim.commandId,
+      leaseToken,
+      sourceSessionId: claim.sourceSessionId,
+      workspaceFingerprint: claim.workspaceFingerprint,
+      branch: claim.branch,
+      expectedDigest: claim.expectedDigest,
+      expectedPatchDigest: claim.expectedPatchDigest,
+      updatedAt: Date.now()
+    };
+    await savePush(provider, receipt);
+  } catch (error) {
+    if (!claim)
+      return;
+    await agentCall("fail_local_push", {
+      commandId: claim.commandId,
+      leaseToken,
+      error: error instanceof Error ? error.message : String(error)
+    }).catch(() => {
+      return;
+    });
+  }
+}
+function createPushRunner(provider, agentCall) {
+  const pending = new Map;
+  let running = false;
+  const drain = async () => {
+    if (running)
+      return;
+    running = true;
+    try {
+      while (pending.size) {
+        const item = pending.values().next().value;
+        if (!item)
+          break;
+        pending.delete(item._id);
+        await processPush(provider, item, agentCall);
+      }
+    } finally {
+      running = false;
+    }
+  };
+  return {
+    update(items) {
+      for (const item of items)
+        pending.set(item._id, item);
+      drain();
+    }
+  };
+}
+
+// runtime/src/question.ts
+import { createHash as createHash8, randomBytes as randomBytes7 } from "node:crypto";
+import { stat as stat5 } from "node:fs/promises";
+
+// runtime/src/answer-decision.ts
 var answerDecisionInstruction = [
-  "Before doing anything else, decide whether you have something useful to add to this conversation.",
+  "Before doing anything else, decide whether you have something useful to add to this review conversation.",
   "Your first visible output must be exactly one of these markers on its own line: <answer_start> or <no_answer>. Do not call a tool, explain your choice, or emit any other text before that marker.",
   "On the next line, immediately emit <reason>one brief sentence explaining the routing decision</reason>. This reason is operational metadata and will not be shown to the user.",
   "Choose <answer_start> for questions, requests, uncertainty, useful corrections, or when your code context can materially help. Tend toward answering. Choose <no_answer> only when the message is explicitly directed to a human and you genuinely have nothing useful to add.",
@@ -19953,7 +20846,7 @@ function requiredAnswerText(answer) {
   return sanitized;
 }
 
-// cli/src/ambient-response.ts
+// runtime/src/ambient-response.ts
 async function runAttempt(options, instruction, providerConversationId) {
   let answer = "";
   const stream = new AnswerDecisionStream({
@@ -20008,3083 +20901,13 @@ async function runAmbientResponse(options) {
   };
 }
 
-// packages/protocol/src/agent-lifecycle.ts
-var criticLifecycleEvents = [
-  "session-start",
-  "user-prompt-submit",
-  "post-tool-use",
-  "stop"
-];
-function isCriticLifecycleEvent(value) {
-  return criticLifecycleEvents.some((event) => event === value);
-}
+// runtime/src/provider.ts
+import { existsSync } from "node:fs";
+import { spawn as spawn3, spawnSync as spawnSync2 } from "node:child_process";
 
-// cli/src/local-snapshot-sync.ts
-import { existsSync as existsSync5, watch } from "node:fs";
-
-// cli/src/local-snapshot.ts
-import { createHash as createHash2 } from "node:crypto";
-import { spawn as spawn2 } from "node:child_process";
-import { createReadStream } from "node:fs";
-import { mkdtemp, readFile as readFile6, rm as rm2, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { basename, join as join3 } from "node:path";
-import { gzipSync } from "node:zlib";
-
-// cli/src/repository-policy.ts
-import { existsSync as existsSync4 } from "node:fs";
-import { readFile as readFile5 } from "node:fs/promises";
-import { resolve as resolve3 } from "node:path";
-var secretPathPatterns = [
-  ".criticignore",
-  ".env",
-  ".env.*",
-  "*.pem",
-  "*.key",
-  "*.p12",
-  "*.pfx",
-  "id_rsa",
-  "id_ed25519",
-  "**/.aws/**",
-  "**/.ssh/**",
-  "**/credentials*",
-  "**/secrets.*",
-  "**/.git/**"
-];
-var generatedUntrackedPatterns = [
-  "**/node_modules/**",
-  "**/.next/**",
-  "**/.nuxt/**",
-  "**/.output/**",
-  "**/dist/**",
-  "**/build/**",
-  "**/coverage/**",
-  "**/target/**",
-  "**/.turbo/**",
-  "**/.cache/**",
-  "**/*.min.js",
-  "**/*.map"
-];
-var secretContentPatterns = [
-  {
-    label: "private key",
-    expression: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/
-  },
-  { label: "AWS access key", expression: /\bAKIA[0-9A-Z]{16}\b/ },
-  {
-    label: "GitHub token",
-    expression: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,255}\b/
-  },
-  { label: "GitHub token", expression: /\bgithub_pat_[A-Za-z0-9_]{50,255}\b/ },
-  { label: "Slack token", expression: /\bxox[baprs]-[A-Za-z0-9-]{20,255}\b/ },
-  {
-    label: "credential value",
-    expression: /\b(?:api[_-]?key|access[_-]?token|client[_-]?secret|private[_-]?token)\b\s*[:=]\s*["'`]?[A-Za-z0-9_+./=-]{24,}/i
-  }
-];
-function globRegex(pattern) {
-  const normalized = pattern.replace(/^\/+/, "");
-  const variants = normalized.startsWith("**/") ? [normalized, normalized.slice(3)] : [normalized];
-  const escaped = variants.map((variant) => variant.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("**", "\x00").replaceAll("*", "[^/]*").replaceAll("\x00", ".*").replaceAll("?", "[^/]"));
-  const alternatives = escaped.flatMap((value) => [value, `.*/${value}`]);
-  return new RegExp(`^(?:${alternatives.join("|")})(?:/.*)?$`, "i");
-}
-async function repositoryExcludedPatterns(root) {
-  const criticIgnore = resolve3(root, ".criticignore");
-  const custom = existsSync4(criticIgnore) ? (await readFile5(criticIgnore, "utf8")).split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith("#") && !line.startsWith("!")) : [];
-  return [...secretPathPatterns, ...custom];
-}
-function repositoryPathIsExcluded(path, patterns) {
-  return patterns.some((pattern) => globRegex(pattern).test(path));
-}
-function untrackedPathIsGenerated(path) {
-  return generatedUntrackedPatterns.some((pattern) => globRegex(pattern).test(path));
-}
-function secretFinding(content) {
-  return secretContentPatterns.find(({ expression }) => expression.test(content))?.label;
-}
-
-// packages/protocol/src/effective-patch.ts
-function hasRequiredBlobIdentity(file) {
-  if (file.status === "added")
-    return Boolean(file.newBlobSha);
-  if (file.status === "deleted")
-    return Boolean(file.oldBlobSha);
-  return Boolean(file.oldBlobSha && file.newBlobSha);
-}
-function normalizedFile(file) {
-  return {
-    path: file.path,
-    oldPath: file.oldPath,
-    status: file.status,
-    oldBlobSha: file.oldBlobSha,
-    newBlobSha: file.newBlobSha
-  };
-}
-function effectivePatchManifest(baseSha, files) {
-  if (!baseSha || files.some((file) => !hasRequiredBlobIdentity(file))) {
-    return null;
-  }
-  const normalized = files.map(normalizedFile).sort((left, right) => [
-    left.path,
-    left.oldPath ?? "",
-    left.status,
-    left.oldBlobSha ?? "",
-    left.newBlobSha ?? ""
-  ].join("\x00").localeCompare([
-    right.path,
-    right.oldPath ?? "",
-    right.status,
-    right.oldBlobSha ?? "",
-    right.newBlobSha ?? ""
-  ].join("\x00")));
-  return JSON.stringify({ version: 1, baseSha, files: normalized });
-}
-
-// cli/src/local-snapshot.ts
-var MAX_COMPRESSED_BYTES = 100 * 1024 * 1024;
-var WARNING_COMPRESSED_BYTES = 25 * 1024 * 1024;
-var PATCH_CONCURRENCY = 8;
-var MAX_RENDERABLE_PATCH_BYTES = 5 * 1024 * 1024;
-
-class LocalSnapshotError extends Error {
-  blocked;
-  constructor(message, blocked = false) {
-    super(message);
-    this.blocked = blocked;
-  }
-}
-async function git(cwd, args, acceptedExitCodes = [0], environment = {}) {
-  const child = spawn2("git", ["--literal-pathspecs", ...args], {
-    cwd,
-    env: {
-      ...globalThis.process.env,
-      GIT_CONFIG_NOSYSTEM: "1",
-      GIT_OPTIONAL_LOCKS: "0",
-      GIT_TERMINAL_PROMPT: "0",
-      ...environment
-    },
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-  const [exitCode, stdout, stderr] = await Promise.all([
-    waitForChild(child),
-    readStreamBytes(child.stdout),
-    readStream(child.stderr)
-  ]);
-  if (!acceptedExitCodes.includes(exitCode)) {
-    throw new LocalSnapshotError(stderr.trim() || `git ${args[0] ?? "command"} failed`);
-  }
-  return { exitCode, stdout, stderr };
-}
-function snapshotDate(date = new Date) {
-  return date.toISOString().slice(0, 10);
-}
-async function cleanupSnapshotRefs(root, today = new Date) {
-  const cutoff = new Date(today);
-  cutoff.setUTCDate(cutoff.getUTCDate() - 31);
-  const refs = await gitText(root, ["for-each-ref", "--format=%(refname)", "refs/critic/snapshots"], [0]);
-  for (const ref of refs.split(`
-`).filter(Boolean)) {
-    const date = ref.split("/").at(-2);
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
-      continue;
-    if (new Date(`${date}T00:00:00.000Z`) < cutoff) {
-      await git(root, ["update-ref", "-d", ref]);
-    }
-  }
-}
-async function createSnapshotCommit(root, baseSha, headSha, digest, paths) {
-  const temporary = await mkdtemp(join3(tmpdir(), "critic-snapshot-"));
-  const environment = { GIT_INDEX_FILE: join3(temporary, "index") };
-  try {
-    await git(root, ["read-tree", baseSha], [0], environment);
-    for (let index = 0;index < paths.length; index += 200) {
-      await git(root, ["add", "-A", "--", ...paths.slice(index, index + 200)], [0], environment);
-    }
-    const treeSha = new TextDecoder().decode((await git(root, ["write-tree"], [0], environment)).stdout).trim();
-    const deterministicIdentity = {
-      GIT_AUTHOR_NAME: "Critic",
-      GIT_AUTHOR_EMAIL: "snapshots@critic.run",
-      GIT_AUTHOR_DATE: "@0 +0000",
-      GIT_COMMITTER_NAME: "Critic",
-      GIT_COMMITTER_EMAIL: "snapshots@critic.run",
-      GIT_COMMITTER_DATE: "@0 +0000"
-    };
-    const snapshotSha = new TextDecoder().decode((await git(root, [
-      "commit-tree",
-      treeSha,
-      "-p",
-      headSha,
-      "-m",
-      `Critic local snapshot ${digest}`
-    ], [0], deterministicIdentity)).stdout).trim();
-    const ref = `refs/critic/snapshots/${snapshotDate()}/${digest}`;
-    await git(root, ["update-ref", ref, snapshotSha]);
-    await cleanupSnapshotRefs(root);
-    return snapshotSha;
-  } finally {
-    await rm2(temporary, { recursive: true, force: true });
-  }
-}
-async function gitText(cwd, args, acceptedExitCodes) {
-  const result = await git(cwd, args, acceptedExitCodes);
-  return new TextDecoder().decode(result.stdout).trim();
-}
-async function repositoryRoot(cwd) {
-  return await gitText(cwd, ["rev-parse", "--show-toplevel"]);
-}
-async function defaultBase(root, headSha) {
-  const remoteHead = await gitText(root, ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"], [0, 1]);
-  const candidates = [remoteHead, "origin/main", "origin/master"].filter(Boolean);
-  for (const candidate of candidates) {
-    const exists = await gitText(root, ["rev-parse", "--verify", "--quiet", candidate], [0, 1]);
-    if (!exists)
-      continue;
-    const mergeBase = await gitText(root, ["merge-base", headSha, candidate], [0, 1]);
-    if (mergeBase)
-      return mergeBase;
-  }
-  return headSha;
-}
-function parseNameStatus(value) {
-  const tokens = new TextDecoder().decode(value).split("\x00").filter(Boolean);
-  const files = [];
-  for (let index = 0;index < tokens.length; ) {
-    const code2 = tokens[index++] ?? "";
-    const status = code2[0];
-    if (status === "R" || status === "C") {
-      const oldPath = tokens[index++];
-      const path2 = tokens[index++];
-      if (oldPath && path2) {
-        files.push({ path: path2, oldPath, status: "renamed", tracked: true });
-      }
-      continue;
-    }
-    const path = tokens[index++];
-    if (!path)
-      continue;
-    files.push({
-      path,
-      status: status === "A" ? "added" : status === "D" ? "deleted" : "modified",
-      tracked: true
-    });
-  }
-  return files;
-}
-function parseNumstat(value) {
-  const stats = new Map;
-  for (const line of value.split(/\r?\n/)) {
-    const [added, deleted, path] = line.split("\t");
-    if (!path)
-      continue;
-    stats.set(path, {
-      additions: added === "-" ? 0 : Number(added) || 0,
-      deletions: deleted === "-" ? 0 : Number(deleted) || 0
-    });
-  }
-  return stats;
-}
-function containsNull(value) {
-  return value.includes(0);
-}
-function isBinaryPatch(value) {
-  const text = new TextDecoder().decode(value);
-  return text.includes(`
-GIT binary patch
-`) || text.includes(`
-Binary files `) || text.startsWith(`GIT binary patch
-`) || text.startsWith("Binary files ");
-}
-function patchLineStats(value) {
-  let additions = 0;
-  let deletions = 0;
-  for (const line of new TextDecoder().decode(value).split(/\r?\n/)) {
-    if (line.startsWith("+") && !line.startsWith("+++"))
-      additions += 1;
-    if (line.startsWith("-") && !line.startsWith("---"))
-      deletions += 1;
-  }
-  return { additions, deletions };
-}
-async function checkCurrentFile(root, path, deleted) {
-  if (deleted)
-    return { binary: false };
-  const bytes = new Uint8Array(await readFile6(`${root}/${path}`));
-  return { binary: containsNull(bytes) };
-}
-async function fileMetadata(path) {
-  const size = (await stat(path)).size;
-  const metadata = await new Promise((resolve4, reject) => {
-    const hash = createHash2("sha256");
-    const input = createReadStream(path);
-    const decoder = new TextDecoder;
-    let tail = "";
-    let finding;
-    let lineBreaks = 0;
-    let sawBytes = false;
-    let lastByte = 0;
-    let binary = false;
-    input.on("data", (chunk) => {
-      hash.update(chunk);
-      const bytes = typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk;
-      sawBytes ||= bytes.length > 0;
-      if (bytes.length)
-        lastByte = bytes.at(-1) ?? 0;
-      for (const byte of bytes) {
-        if (byte === 0)
-          binary = true;
-        if (byte === 10)
-          lineBreaks += 1;
-      }
-      if (finding)
-        return;
-      const content = `${tail}${decoder.decode(bytes, { stream: true })}`;
-      finding = secretFinding(content);
-      tail = content.slice(-512);
-    });
-    input.on("error", reject);
-    input.on("end", () => {
-      finding ??= secretFinding(`${tail}${decoder.decode()}`);
-      resolve4({
-        digest: hash.digest("hex"),
-        finding,
-        additions: binary ? 0 : lineBreaks + Number(sawBytes && lastByte !== 10)
-      });
-    });
-  });
-  return { size, ...metadata };
-}
-async function patchForFile(root, baseSha, targetSha, file) {
-  if (file.generated) {
-    const metadata = await fileMetadata(`${root}/${file.path}`);
-    if (metadata.finding) {
-      throw new LocalSnapshotError(`Critic blocked the local change because ${file.path} appears to contain a ${metadata.finding}`, true);
-    }
-    return {
-      binary: false,
-      rawBytes: metadata.size,
-      compressedBytes: 0,
-      additions: metadata.additions,
-      deletions: 0,
-      contentDigest: metadata.digest,
-      omissionReason: "generated",
-      chunkDigest: undefined,
-      compressed: undefined
-    };
-  }
-  const current = targetSha ? { binary: false } : await checkCurrentFile(root, file.path, file.status === "deleted");
-  const result = file.tracked ? await git(root, [
-    "diff",
-    "--binary",
-    "--no-ext-diff",
-    "--find-renames",
-    baseSha,
-    ...targetSha ? [targetSha] : [],
-    "--",
-    file.oldPath ?? file.path,
-    file.path
-  ]) : await git(root, ["diff", "--binary", "--no-index", "--", "/dev/null", file.path], [0, 1]);
-  const patch = result.stdout;
-  const binary = current.binary || containsNull(patch) || isBinaryPatch(patch);
-  if (binary) {
-    return {
-      binary: true,
-      rawBytes: patch.length,
-      compressedBytes: 0,
-      additions: 0,
-      deletions: 0,
-      contentDigest: createHash2("sha256").update(patch).digest("hex"),
-      omissionReason: "binary",
-      chunkDigest: undefined,
-      compressed: undefined
-    };
-  }
-  const finding = secretFinding(new TextDecoder().decode(patch));
-  if (finding) {
-    throw new LocalSnapshotError(`Critic blocked the local change because ${file.path} appears to contain a ${finding}`, true);
-  }
-  if (patch.length > MAX_RENDERABLE_PATCH_BYTES) {
-    return {
-      binary: false,
-      rawBytes: patch.length,
-      compressedBytes: 0,
-      ...patchLineStats(patch),
-      contentDigest: createHash2("sha256").update(patch).digest("hex"),
-      omissionReason: "oversized",
-      chunkDigest: undefined,
-      compressed: undefined
-    };
-  }
-  const compressed = gzipSync(patch, { level: 6 });
-  const chunkDigest = createHash2("sha256").update(compressed).digest("hex");
-  return {
-    binary: false,
-    rawBytes: patch.length,
-    compressedBytes: compressed.length,
-    chunkDigest,
-    contentDigest: undefined,
-    omissionReason: undefined,
-    compressed,
-    ...patchLineStats(patch)
-  };
-}
-async function blobAtRevision(root, revision, path) {
-  const result = await git(root, ["ls-tree", "-z", revision, "--", path]);
-  const metadata = new TextDecoder().decode(result.stdout).split("\t", 1)[0]?.split(" ");
-  return metadata[2] || undefined;
-}
-async function currentBlob(root, path) {
-  return (await gitText(root, ["hash-object", `--path=${path}`, "--", path])).trim();
-}
-async function blobIdentityForFile(root, baseSha, targetSha, file) {
-  const [oldBlobSha, newBlobSha] = await Promise.all([
-    file.status === "added" ? undefined : blobAtRevision(root, baseSha, file.oldPath ?? file.path),
-    file.status === "deleted" ? undefined : targetSha ? blobAtRevision(root, targetSha, file.path) : currentBlob(root, file.path)
-  ]);
-  if (file.status !== "added" && !oldBlobSha || file.status !== "deleted" && !newBlobSha) {
-    throw new LocalSnapshotError(`Critic could not identify the complete material state of ${file.path}`);
-  }
-  return { oldBlobSha, newBlobSha };
-}
-async function inBatches(values, run) {
-  const results = [];
-  for (let index = 0;index < values.length; index += PATCH_CONCURRENCY) {
-    results.push(...await Promise.all(values.slice(index, index + PATCH_CONCURRENCY).map(run)));
-  }
-  return results;
-}
-async function scanSnapshotTarget(target) {
-  const {
-    root,
-    branch,
-    baseSha,
-    headSha,
-    targetSha,
-    status,
-    kind,
-    commitSubject,
-    commitAuthorName,
-    committedAt
-  } = target;
-  const [trackedResult, untrackedValue, numstatValue, excludedPatterns] = await Promise.all([
-    git(root, [
-      "diff",
-      "--name-status",
-      "-z",
-      "--find-renames",
-      baseSha,
-      ...targetSha ? [targetSha] : []
-    ]),
-    targetSha ? Promise.resolve("") : gitText(root, ["ls-files", "-z", "--others", "--exclude-standard"]),
-    gitText(root, [
-      "diff",
-      "--numstat",
-      "--find-renames",
-      baseSha,
-      ...targetSha ? [targetSha] : []
-    ]),
-    repositoryExcludedPatterns(root)
-  ]);
-  const tracked = parseNameStatus(trackedResult.stdout);
-  const untracked = untrackedValue.split("\x00").filter(Boolean).map((path) => ({
-    path,
-    status: "added",
-    tracked: false,
-    generated: untrackedPathIsGenerated(path)
-  }));
-  const candidates = [...tracked, ...untracked];
-  for (const file of candidates) {
-    if (repositoryPathIsExcluded(file.path, excludedPatterns)) {
-      throw new LocalSnapshotError(`Critic blocked the local change because ${file.path} is excluded from repository access`, true);
-    }
-  }
-  const stats = parseNumstat(numstatValue);
-  const payloads = await inBatches(candidates, async (file) => {
-    const [payload, blobIdentity] = await Promise.all([
-      patchForFile(root, baseSha, targetSha, file),
-      blobIdentityForFile(root, baseSha, targetSha, file)
-    ]);
-    return { ...payload, ...blobIdentity };
-  });
-  const files = candidates.map((file, index) => {
-    const payload = payloads[index];
-    const fileStat = stats.get(file.path);
-    const additions = file.tracked ? fileStat?.additions ?? payload.additions : payload.additions;
-    return {
-      path: file.path,
-      oldPath: "oldPath" in file ? file.oldPath : undefined,
-      status: file.status,
-      oldBlobSha: payload.oldBlobSha,
-      newBlobSha: payload.newBlobSha,
-      additions,
-      deletions: file.tracked ? fileStat?.deletions ?? payload.deletions : payload.deletions,
-      binary: payload.binary,
-      contentDigest: payload.contentDigest,
-      omissionReason: payload.omissionReason,
-      rawBytes: payload.rawBytes,
-      compressedBytes: payload.compressedBytes,
-      chunkDigest: payload.chunkDigest,
-      compressed: payload.compressed
-    };
-  });
-  const rawBytes = files.reduce((total, file) => total + file.rawBytes, 0);
-  const compressedBytes = files.reduce((total, file) => total + file.compressedBytes, 0);
-  if (compressedBytes > MAX_COMPRESSED_BYTES) {
-    throw new LocalSnapshotError("Critic blocked the local change because its compressed patch exceeds 100 MB", true);
-  }
-  const manifest = effectivePatchManifest(baseSha, files);
-  if (!manifest) {
-    throw new LocalSnapshotError("Critic could not build the complete effective patch manifest");
-  }
-  const patchDigest = createHash2("sha256").update(manifest).digest("hex");
-  const digest = createHash2("sha256").update(kind).update("\x00").update(headSha).update("\x00").update(patchDigest).digest("hex");
-  const snapshotPaths = [
-    ...new Set(candidates.flatMap((file, index) => {
-      if (payloads[index].omissionReason)
-        return [];
-      return "oldPath" in file && file.oldPath ? [file.oldPath, file.path] : [file.path];
-    }))
-  ];
-  const snapshotSha = targetSha ?? await createSnapshotCommit(root, baseSha, headSha, digest, snapshotPaths);
-  return {
-    root,
-    workspaceName: basename(root) || root,
-    workspaceFingerprint: workspaceFingerprint(root),
-    branch,
-    baseSha,
-    headSha,
-    snapshotSha,
-    digest,
-    patchDigest,
-    manifestVersion: 1,
-    kind,
-    commitSubject,
-    commitAuthorName,
-    committedAt,
-    worktreeClean: status.length === 0,
-    rawBytes,
-    compressedBytes,
-    warning: compressedBytes > WARNING_COMPRESSED_BYTES,
-    files
-  };
-}
-async function firstParent(root, revision) {
-  const parents = (await gitText(root, ["rev-list", "--parents", "-n", "1", revision])).split(/\s+/);
-  return parents[1];
-}
-async function localCommitShas(root, headSha) {
-  const baseSha = await defaultBase(root, headSha);
-  if (baseSha === headSha)
-    return [];
-  const revisions = await gitText(root, [
-    "rev-list",
-    "--reverse",
-    "--first-parent",
-    `${baseSha}..${headSha}`
-  ]);
-  return revisions.split(`
-`).filter(Boolean).slice(-100);
-}
-async function commitMetadata(root, revision) {
-  const value = await gitText(root, [
-    "show",
-    "-s",
-    "--format=%s%x00%an%x00%ct",
-    revision
-  ]);
-  const [commitSubject, commitAuthorName, committedAt] = value.split("\x00");
-  return {
-    commitSubject: commitSubject || undefined,
-    commitAuthorName: commitAuthorName || undefined,
-    committedAt: committedAt ? Number(committedAt) * 1000 : undefined
-  };
-}
-async function commitSnapshotTarget(root, branch, revision) {
-  const baseSha = await firstParent(root, revision);
-  if (!baseSha)
-    return null;
-  return {
-    root,
-    branch,
-    baseSha,
-    headSha: revision,
-    targetSha: revision,
-    status: "",
-    kind: "commit",
-    ...await commitMetadata(root, revision)
-  };
-}
-async function scanLocalCommitHistory(cwd, published = new Set) {
-  const root = await repositoryRoot(cwd);
-  const [branchValue, headSha] = await Promise.all([
-    gitText(root, ["branch", "--show-current"]),
-    gitText(root, ["rev-parse", "HEAD"])
-  ]);
-  const branch = branchValue || "detached";
-  const targets = (await Promise.all((await localCommitShas(root, headSha)).filter((revision) => !published.has(revision)).map((revision) => commitSnapshotTarget(root, branch, revision)))).filter((target) => Boolean(target));
-  return (await Promise.all(targets.map(scanSnapshotTarget))).filter((snapshot) => snapshot.files.length > 0);
-}
-async function scanLocalSnapshot(cwd) {
-  const root = await repositoryRoot(cwd);
-  const [branchValue, headSha, status] = await Promise.all([
-    gitText(root, ["branch", "--show-current"]),
-    gitText(root, ["rev-parse", "HEAD"]),
-    gitText(root, ["status", "--porcelain=v1", "--untracked-files=all"])
-  ]);
-  const branch = branchValue || "detached";
-  const baseSha = await defaultBase(root, headSha);
-  return await scanSnapshotTarget({
-    root,
-    branch,
-    baseSha,
-    headSha,
-    status,
-    kind: "workspace"
-  });
-}
-async function uploadChunk(upload, file) {
-  if (!file.compressed)
-    throw new Error("Snapshot chunk is missing");
-  const response = await fetch(upload.uploadUrl, {
-    method: "POST",
-    headers: { "content-type": "application/gzip" },
-    body: Uint8Array.from(file.compressed).buffer
-  });
-  const result = await response.json();
-  if (!response.ok || !result.storageId) {
-    throw new Error(`Snapshot upload failed (${response.status})`);
-  }
-  return { uploadId: upload.uploadId, storageId: result.storageId };
-}
-async function publishLocalSnapshot(snapshot, sourceSessionId, agentCall) {
-  const metadata = snapshot.files.map(({ compressed: _compressed, ...file }) => file);
-  if (!metadata.length) {
-    await agentCall("clear_local_snapshot", {
-      sourceSessionId,
-      workspaceFingerprint: snapshot.workspaceFingerprint
-    });
-    return null;
-  }
-  const begun = await agentCall("begin_local_snapshot", {
-    sourceSessionId,
-    workspaceName: snapshot.workspaceName,
-    workspaceFingerprint: snapshot.workspaceFingerprint,
-    branch: snapshot.branch,
-    baseSha: snapshot.baseSha,
-    headSha: snapshot.headSha,
-    snapshotSha: snapshot.snapshotSha,
-    digest: snapshot.digest,
-    patchDigest: snapshot.patchDigest,
-    manifestVersion: snapshot.manifestVersion,
-    kind: snapshot.kind,
-    commitSubject: snapshot.commitSubject,
-    commitAuthorName: snapshot.commitAuthorName,
-    committedAt: snapshot.committedAt,
-    worktreeClean: snapshot.worktreeClean,
-    rawBytes: snapshot.rawBytes,
-    compressedBytes: snapshot.compressedBytes,
-    files: metadata
-  });
-  if (begun.status === "ignored")
-    return null;
-  if (begun.status === "ready")
-    return begun;
-  if (!begun.snapshotId)
-    throw new Error("Snapshot staging did not start");
-  const filesByDigest = new Map(snapshot.files.flatMap((file) => file.chunkDigest ? [[file.chunkDigest, file]] : []));
-  const completed = await inBatches(begun.uploads, (upload) => {
-    const file = filesByDigest.get(upload.digest);
-    if (!file)
-      throw new Error("Snapshot upload does not match a local file");
-    return uploadChunk(upload, file);
-  });
-  return await agentCall("finalize_local_snapshot", {
-    sourceSessionId,
-    workspaceFingerprint: snapshot.workspaceFingerprint,
-    snapshotId: begun.snapshotId,
-    uploads: completed
-  });
-}
-
-// cli/src/local-snapshot-sync.ts
-var DEFAULT_DEBOUNCE_MS = 750;
-var RECONCILIATION_MS = 30000;
-var RETRY_DELAYS_MS = [5000, 15000, 30000, 60000];
-function retryDelay(failures) {
-  const base = RETRY_DELAYS_MS[Math.min(failures - 1, RETRY_DELAYS_MS.length - 1)] ?? RETRY_DELAYS_MS.at(-1);
-  const jitter = Math.round(base * (Math.random() * 0.2 - 0.1));
-  return base + jitter;
-}
-
-class LocalSnapshotSync {
-  agentCall;
-  workspaces = new Map;
-  reconciliation;
-  constructor(agentCall) {
-    this.agentCall = agentCall;
-    this.reconciliation = setInterval(() => {
-      for (const state of this.workspaces.values()) {
-        this.schedule(state.cwd, state.sourceSessionId, 0, true);
-      }
-    }, RECONCILIATION_MS);
-    this.reconciliation.unref();
-  }
-  schedule(cwd, sourceSessionId, delay = DEFAULT_DEBOUNCE_MS, verify = false) {
-    const state = this.workspaces.get(cwd) ?? {
-      cwd,
-      sourceSessionId,
-      failures: 0,
-      running: false,
-      rerun: false,
-      verify: false,
-      materialChangeKnown: false,
-      publishedCommits: new Set
-    };
-    state.sourceSessionId = sourceSessionId;
-    state.verify ||= verify;
-    state.materialChangeKnown ||= !verify;
-    this.workspaces.set(cwd, state);
-    if (state.running) {
-      state.rerun = true;
-      return;
-    }
-    if (state.timer)
-      clearTimeout(state.timer);
-    state.timer = setTimeout(() => {
-      state.timer = undefined;
-      this.start(state);
-    }, delay);
-  }
-  async flush(cwd, sourceSessionId, verify = false) {
-    const state = this.workspaces.get(cwd) ?? {
-      cwd,
-      sourceSessionId,
-      failures: 0,
-      running: false,
-      rerun: false,
-      verify: false,
-      materialChangeKnown: false,
-      publishedCommits: new Set
-    };
-    state.sourceSessionId = sourceSessionId;
-    state.verify ||= verify;
-    state.materialChangeKnown ||= !verify;
-    this.workspaces.set(cwd, state);
-    if (state.timer)
-      clearTimeout(state.timer);
-    state.timer = undefined;
-    if (state.current) {
-      state.rerun = true;
-      await state.current;
-      this.cancelTimer(state);
-    }
-    await this.start(state);
-  }
-  stop() {
-    clearInterval(this.reconciliation);
-    for (const state of this.workspaces.values()) {
-      if (state.timer)
-        clearTimeout(state.timer);
-      state.watcher?.close();
-    }
-    this.workspaces.clear();
-  }
-  start(state) {
-    if (state.current) {
-      state.rerun = true;
-      return state.current;
-    }
-    state.rerun = false;
-    state.current = this.syncOnce(state).finally(() => {
-      state.current = undefined;
-      state.running = false;
-      if (state.rerun) {
-        state.rerun = false;
-        this.schedule(state.cwd, state.sourceSessionId, 0, state.verify && !state.materialChangeKnown);
-      }
-    });
-    return state.current;
-  }
-  cancelTimer(state) {
-    if (state.timer)
-      clearTimeout(state.timer);
-    state.timer = undefined;
-  }
-  forgetWorkspace(state) {
-    this.cancelTimer(state);
-    state.watcher?.close();
-    state.watcher = undefined;
-    state.watcherRoot = undefined;
-    if (this.workspaces.get(state.cwd) === state) {
-      this.workspaces.delete(state.cwd);
-    }
-  }
-  async syncOnce(state) {
-    state.running = true;
-    const verify = state.verify;
-    const materialChangeKnown = state.materialChangeKnown;
-    state.verify = false;
-    state.materialChangeKnown = false;
-    try {
-      const commitHistory = await scanLocalCommitHistory(state.cwd, state.publishedCommits);
-      for (const commit of commitHistory) {
-        if (state.publishedCommits.has(commit.headSha))
-          continue;
-        const result = await publishLocalSnapshot(commit, state.sourceSessionId, this.agentCall);
-        state.publishedCommits.add(commit.headSha);
-        if (result?.snapshotUrl) {
-          console.log(`[criticd] local commit synced: ${result.snapshotUrl}`);
-        }
-      }
-      const snapshot = await scanLocalSnapshot(state.cwd);
-      this.watchWorkspace(state, snapshot.root);
-      let shouldPublish = snapshot.digest !== state.lastDigest;
-      if (!shouldPublish && verify) {
-        const status = await this.agentCall("confirm_local_snapshot", {
-          sourceSessionId: state.sourceSessionId,
-          workspaceFingerprint: snapshot.workspaceFingerprint,
-          digest: snapshot.digest
-        });
-        shouldPublish = snapshot.files.length ? !status || !status.active || status.digest !== snapshot.digest || status.syncState !== "synced" : Boolean(status?.active);
-      }
-      if (shouldPublish) {
-        const result = await publishLocalSnapshot(snapshot, state.sourceSessionId, this.agentCall);
-        state.lastDigest = result && "digest" in result ? result.digest : snapshot.digest;
-        if (snapshot.warning) {
-          console.warn(`[criticd] local change is ${Math.round(snapshot.compressedBytes / 1024 / 1024)} MB compressed`);
-        }
-        if (result?.criticUrl) {
-          console.log(`[criticd] local change synced: ${result.criticUrl}`);
-        }
-      }
-      state.failures = 0;
-    } catch (error) {
-      if (!existsSync5(state.cwd)) {
-        this.forgetWorkspace(state);
-        console.warn(`[criticd] stopped local sync because the workspace was removed: ${state.cwd}`);
-        return;
-      }
-      state.failures += 1;
-      const message = error instanceof Error ? error.message : String(error);
-      const blocked = error instanceof LocalSnapshotError && error.blocked;
-      await this.agentCall("fail_local_snapshot", {
-        sourceSessionId: state.sourceSessionId,
-        workspaceFingerprint: workspaceFingerprint(state.cwd),
-        error: message,
-        blocked,
-        materialChangeKnown
-      }).catch(() => {
-        return;
-      });
-      console.error("[criticd] local change sync failed:", message);
-      if (!blocked) {
-        state.verify = true;
-        if (state.timer)
-          clearTimeout(state.timer);
-        state.timer = setTimeout(() => {
-          state.timer = undefined;
-          this.start(state);
-        }, retryDelay(state.failures));
-      }
-    } finally {
-      state.running = false;
-    }
-  }
-  watchWorkspace(state, root) {
-    if (state.watcher && state.watcherRoot === root)
-      return;
-    state.watcher?.close();
-    state.watcher = undefined;
-    state.watcherRoot = undefined;
-    try {
-      const watcher = watch(root, { recursive: true, persistent: false }, (_event, filename) => {
-        const path = filename?.toString().replaceAll("\\", "/");
-        if (!path || path === ".git" || path.startsWith(".git/"))
-          return;
-        this.schedule(state.cwd, state.sourceSessionId);
-      });
-      watcher.on("error", (error) => {
-        if (state.watcher !== watcher)
-          return;
-        console.warn("[criticd] local workspace watch failed:", error.message);
-        watcher.close();
-        state.watcher = undefined;
-        state.watcherRoot = undefined;
-      });
-      state.watcher = watcher;
-      state.watcherRoot = root;
-    } catch (error) {
-      console.warn("[criticd] local workspace watch unavailable; using periodic scans:", error instanceof Error ? error.message : String(error));
-    }
-  }
-}
-function hookMayChangeWorkspace(hook) {
-  const tool = typeof hook.tool_name === "string" ? hook.tool_name : typeof hook.toolName === "string" ? hook.toolName : "";
-  return [
-    "Bash",
-    "Edit",
-    "Write",
-    "MultiEdit",
-    "NotebookEdit",
-    "apply_patch"
-  ].some((candidate) => tool.toLowerCase().includes(candidate.toLowerCase()));
-}
-
-// cli/src/daemon-ipc.ts
-import { createHash as createHash3 } from "node:crypto";
-
-// cli/src/explanation-media.ts
-import { readFile as readFile7, realpath } from "node:fs/promises";
-import { extname, isAbsolute as isAbsolute2, relative, resolve as resolve4 } from "node:path";
-var mediaLimits = {
-  image: 15 * 1024 * 1024,
-  video: 100 * 1024 * 1024,
-  html: 1024 * 1024
-};
-var mediaTypes = {
-  image: new Set([
-    "image/avif",
-    "image/gif",
-    "image/jpeg",
-    "image/png",
-    "image/webp"
-  ]),
-  video: new Set(["video/mp4", "video/quicktime", "video/webm"]),
-  html: new Set(["text/html"])
-};
-var mediaTypeByExtension = {
-  ".avif": "image/avif",
-  ".gif": "image/gif",
-  ".html": "text/html",
-  ".jpeg": "image/jpeg",
-  ".jpg": "image/jpeg",
-  ".mov": "video/quicktime",
-  ".mp4": "video/mp4",
-  ".png": "image/png",
-  ".webm": "video/webm",
-  ".webp": "image/webp"
-};
-var interactiveHtmlPolicy = [
-  "default-src 'none'",
-  "script-src 'unsafe-inline'",
-  "style-src 'unsafe-inline'",
-  "img-src data: blob:",
-  "media-src data: blob:",
-  "font-src data:",
-  "connect-src 'none'",
-  "object-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'"
-].join("; ");
-var interactiveHtmlHead = `<meta http-equiv="Content-Security-Policy" content="${interactiveHtmlPolicy}"><meta name="viewport" content="width=device-width, initial-scale=1">`;
-function secureInteractiveHtml(html) {
-  if (/<head(?:\s[^>]*)?>/i.test(html)) {
-    return html.replace(/<head(?:\s[^>]*)?>/i, (head) => `${head}${interactiveHtmlHead}`);
-  }
-  if (/<html(?:\s[^>]*)?>/i.test(html)) {
-    return html.replace(/<html(?:\s[^>]*)?>/i, (root) => `${root}<head>${interactiveHtmlHead}</head>`);
-  }
-  return `<!doctype html><html><head>${interactiveHtmlHead}</head><body>${html}</body></html>`;
-}
-async function workspaceFile(path, cwd) {
-  const [workspace, filePath] = await Promise.all([
-    realpath(cwd),
-    realpath(resolve4(cwd, path))
-  ]);
-  const localPath = relative(workspace, filePath);
-  if (localPath.startsWith("..") || isAbsolute2(localPath)) {
-    throw new Error("Narrative media must be inside the current workspace");
-  }
-  return new Blob([await readFile7(filePath)], {
-    type: mediaTypeByExtension[extname(filePath).toLowerCase()] ?? ""
-  });
-}
-async function mediaBody(media, cwd) {
-  if (media.kind === "html") {
-    const html = media.html ?? (media.path ? await (await workspaceFile(media.path, cwd)).text() : "");
-    if (!html.trim())
-      throw new Error("Interactive HTML cannot be empty");
-    return new Blob([secureInteractiveHtml(html)], { type: "text/html" });
-  }
-  if (!media.path)
-    throw new Error(`Narrative ${media.kind} requires a file path`);
-  if (media.html)
-    throw new Error("Inline HTML is only valid for interactive HTML media");
-  return await workspaceFile(media.path, cwd);
-}
-async function uploadMedia(media, cwd, agentCall) {
-  const body = await mediaBody(media, cwd);
-  const mimeType = body.type.split(";")[0]?.toLowerCase() ?? "";
-  if (!mediaTypes[media.kind].has(mimeType)) {
-    throw new Error(`Unsupported ${media.kind} type: ${mimeType || "unknown"}`);
-  }
-  if (body.size < 1 || body.size > mediaLimits[media.kind]) {
-    throw new Error(`Narrative ${media.kind} is empty or too large`);
-  }
-  if (media.kind === "image" && !media.alt?.trim()) {
-    throw new Error("Narrative images require alt text");
-  }
-  const ticket = await agentCall("create_explanation_upload", {
-    kind: media.kind,
-    mimeType,
-    size: body.size,
-    alt: media.alt,
-    caption: media.caption
-  });
-  try {
-    const response = await fetch(ticket.uploadUrl, {
-      method: "POST",
-      headers: { "content-type": mimeType },
-      body
-    });
-    const result = await response.json();
-    if (!response.ok || !result.storageId) {
-      throw new Error(`Narrative media upload failed (${response.status})`);
-    }
-    await agentCall("complete_explanation_upload", {
-      uploadId: ticket.uploadId,
-      storageId: result.storageId
-    });
-    return ticket.uploadId;
-  } catch (error) {
-    await agentCall("discard_explanation_upload", {
-      uploadId: ticket.uploadId
-    }).catch(() => {
-      return;
-    });
-    throw error;
-  }
-}
-async function prepareExplanationMedia(explanations, cwd, agentCall) {
-  const uploadIds = [];
-  const prepared = [];
-  try {
-    for (const explanation of explanations) {
-      if (!explanation.media?.length) {
-        prepared.push(explanation);
-        continue;
-      }
-      if (explanation.kind !== "change") {
-        throw new Error("Media is only supported in the change narrative");
-      }
-      const media = [];
-      for (const item of explanation.media) {
-        const uploadId = await uploadMedia(item, cwd, agentCall);
-        uploadIds.push(uploadId);
-        media.push({ uploadId });
-      }
-      prepared.push({ ...explanation, media });
-    }
-  } catch (error) {
-    await discardExplanationMedia(uploadIds, agentCall);
-    throw error;
-  }
-  return { explanations: prepared, uploadIds };
-}
-async function discardExplanationMedia(uploadIds, agentCall) {
-  await Promise.allSettled(uploadIds.map((uploadId) => agentCall("discard_explanation_upload", { uploadId })));
-}
-
-// packages/protocol/src/publication-batches.ts
-var MAX_BATCH_BYTES = 700000;
-var MAX_BATCH_ITEMS = 24;
-function encodedBytes(value) {
-  return new TextEncoder().encode(JSON.stringify(value)).byteLength;
-}
-function publicationBatches(items) {
-  const batches = [];
-  let current = [];
-  for (const item of items) {
-    if (encodedBytes([item]) > MAX_BATCH_BYTES) {
-      throw new Error("One explanation is too large to publish");
-    }
-    const candidate = [...current, item];
-    if (current.length > 0 && (candidate.length > MAX_BATCH_ITEMS || encodedBytes(candidate) > MAX_BATCH_BYTES)) {
-      batches.push(current);
-      current = [item];
-    } else {
-      current = candidate;
-    }
-  }
-  if (current.length > 0)
-    batches.push(current);
-  return batches;
-}
-// cli/src/daemon-ipc.ts
-function ipcGitContext(payload, runtime) {
-  const requestedCwd = typeof payload.cwd === "string" ? payload.cwd : undefined;
-  const requestedSessionId = typeof payload.sourceSessionId === "string" ? payload.sourceSessionId : undefined;
-  const sessionDirectory = requestedSessionId ? [...runtime.sessionByDirectory.entries()].find(([, sessionId]) => sessionId === requestedSessionId)?.[0] : undefined;
-  const cwd = requestedCwd ?? sessionDirectory;
-  if (!cwd) {
-    throw new Error("Critic could not identify this task’s repository. Start a new task after Critic’s SessionStart hook is trusted.");
-  }
-  const sourceSessionId = requestedSessionId ?? runtime.sessionByDirectory.get(cwd);
-  if (!sourceSessionId) {
-    throw new Error("Critic could not identify this task. Start a new task after reconnecting Critic.");
-  }
-  return { cwd, sourceSessionId };
-}
-async function publishFromIpc(call, runtime, cwd, sourceSessionId, expected) {
-  const payload = call.payload ?? {};
-  const context = runtime.gitContext(cwd);
-  await runtime.syncLocalSnapshot(cwd, sourceSessionId);
-  const status = await runtime.agentCall("publication_status", {
-    ...context,
-    sourceSessionId,
-    workspaceFingerprint: context.workingDirectoryFingerprint,
-    preferLocal: runtime.hasUncommittedChanges(cwd)
-  });
-  if (!status.eligible || status.ready === false) {
-    throw new Error(status.reason ?? "Critic is not ready to publish this change");
-  }
-  const target = status.target ?? "github";
-  const revision = status.revision ?? status.headSha ?? context.headSha ?? "";
-  if (expected && (target !== expected.target || revision !== expected.revision)) {
-    throw new Error("The authored patchset changed after Critic issued this checkpoint. Finish the task again to publish the current revision.");
-  }
-  const prepared = await prepareExplanationMedia(Array.isArray(payload.explanations) ? payload.explanations : [], cwd, runtime.agentCall);
-  const batches = publicationBatches(prepared.explanations);
-  const deleteIdentityKeys = Array.isArray(payload.deleteIdentityKeys) ? payload.deleteIdentityKeys.filter((value) => typeof value === "string") : [];
-  const requestId = createHash3("sha256").update(sourceSessionId).update("\x00").update(target).update("\x00").update(revision).update("\x00").update(JSON.stringify(prepared.explanations)).update("\x00").update(JSON.stringify(deleteIdentityKeys)).digest("hex");
-  let publicationId;
-  try {
-    const publication = await runtime.agentCall("begin_publication", {
-      ...context,
-      target,
-      workspaceFingerprint: target === "local" ? context.workingDirectoryFingerprint : undefined,
-      expectedDigest: target === "local" ? revision : undefined,
-      sourceSessionId,
-      requestId,
-      expectedExplanationCount: prepared.explanations.length,
-      expectedBatchCount: batches.length,
-      deleteIdentityKeys
-    });
-    publicationId = publication.publicationId;
-    for (const [sequence, explanations] of batches.entries()) {
-      await runtime.agentCall("stage_publication_batch", {
-        target,
-        publicationId,
-        sequence,
-        explanations
-      });
-    }
-    const result = await runtime.agentCall("finalize_publication", {
-      target,
-      publicationId
-    });
-    await runtime.hookSessions.markPublished(sourceSessionId, `${target}:${revision}`);
-    return result;
-  } catch (error) {
-    if (publicationId) {
-      await runtime.agentCall("abort_publication", { target, publicationId }).catch(() => {
-        return;
-      });
-    }
-    if (prepared.uploadIds.length) {
-      await discardExplanationMedia(prepared.uploadIds, runtime.agentCall);
-    }
-    throw error;
-  }
-}
-async function handleIpcCall(call, runtime) {
-  if (call.method === "health")
-    return runtime.health();
-  if (call.method === "shutdown") {
-    runtime.shutdown(call.payload ?? {});
-    return { stopping: true };
-  }
-  if (call.method === "status") {
-    const status = await runtime.refreshStatus();
-    if (!status)
-      throw new Error(runtime.lastError() ?? "Critic is unreachable");
-    return status;
-  }
-  if (call.method === "hook") {
-    return await runtime.handleHook(call.payload ?? {});
-  }
-  const { cwd, sourceSessionId } = ipcGitContext(call.payload ?? {}, runtime);
-  runtime.sessionByDirectory.set(cwd, sourceSessionId);
-  await runtime.registerSession(cwd, sourceSessionId, true);
-  return await publishFromIpc(call, runtime, cwd, sourceSessionId);
-}
-function createIpcHandler(runtime) {
-  return async (call) => {
-    try {
-      return {
-        status: 200,
-        body: { ok: true, result: await handleIpcCall(call, runtime) }
-      };
-    } catch (error) {
-      return {
-        status: 400,
-        body: {
-          ok: false,
-          error: error instanceof Error ? error.message : "Unknown daemon error"
-        }
-      };
-    }
-  };
-}
-
-// cli/src/daemon-hook-handler.ts
-function checkpointBlocksStop(checkpoint) {
-  return Boolean(checkpoint.verificationError || checkpoint.awaitingSync || checkpoint.requiresPublication || checkpoint.requiresAuthoringPush || checkpoint.authoringPushError);
-}
-function hookEventMarksTurnRunning(event) {
-  return event === "user-prompt-submit" || event === "post-tool-use";
-}
-function createDaemonHookHandler(options) {
-  return async (payload) => {
-    const { hook, cwd, sourceSessionId, event } = options.parseHook(payload);
-    options.sessionByDirectory.set(cwd, sourceSessionId);
-    if (hookEventMarksTurnRunning(event)) {
-      await options.hookSessions.markTurnRunning(sourceSessionId, cwd);
-    }
-    if (event === "session-start") {
-      const registration = await options.registerSession(cwd, sourceSessionId, true, "session-start");
-      options.localSnapshots.schedule(cwd, sourceSessionId, 0, true);
-      return registration;
-    }
-    if (event !== "stop") {
-      await options.registerSession(cwd, sourceSessionId, true, event);
-      if (event === "user-prompt-submit") {
-        options.localSnapshots.schedule(cwd, sourceSessionId, undefined, true);
-      } else if (hookMayChangeWorkspace(hook)) {
-        options.localSnapshots.schedule(cwd, sourceSessionId);
-      }
-      return { requiresPublication: false };
-    }
-    let state = options.hookSessions.get(sourceSessionId);
-    if (!state) {
-      await options.registerSession(cwd, sourceSessionId, true, "stop");
-      state = options.hookSessions.get(sourceSessionId);
-    }
-    if (!state)
-      return { requiresPublication: false };
-    await options.registerSession(cwd, sourceSessionId, true, "stop");
-    await options.localSnapshots.flush(cwd, sourceSessionId);
-    const context = options.gitContext(cwd);
-    const status = await options.publicationStatus({
-      ...context,
-      preferLocal: options.hasUncommittedChanges(cwd)
-    }, sourceSessionId);
-    const rawRevision = status.revision ?? status.headSha;
-    const revision = rawRevision ? `${status.target ?? "github"}:${rawRevision}` : undefined;
-    const finishStop = async (checkpoint2) => {
-      if (checkpointBlocksStop(checkpoint2))
-        return checkpoint2;
-      const push = await options.authoringPushCheckpoint(sourceSessionId);
-      const result = {
-        ...checkpoint2,
-        requiresAuthoringPush: push.requiresAuthoringPush,
-        authoringPushBranch: push.branch,
-        authoringPushError: push.error
-      };
-      if (!checkpointBlocksStop(result)) {
-        await options.hookSessions.markTurnIdle(sourceSessionId);
-      }
-      return result;
-    };
-    if (!revision) {
-      return await finishStop({ requiresPublication: false });
-    }
-    if (status.published) {
-      await options.hookSessions.markPublished(sourceSessionId, revision);
-    }
-    const checkpoint = options.checkpointResult(status);
-    return await finishStop(checkpoint);
-  };
-}
-
-// cli/src/head-observer.ts
-function startHeadObserver(options) {
-  let running = false;
-  return setInterval(() => {
-    if (running)
-      return;
-    running = true;
-    observeHeads(options).finally(() => {
-      running = false;
-    });
-  }, 3000);
-}
-async function observeHeads(options) {
-  const sessions = options.hookSessions.values().filter((session) => options.runtimeSessionIds.has(session.sessionId)).sort((left, right) => right.updatedAt - left.updatedAt).slice(0, 20);
-  for (const session of sessions) {
-    try {
-      const headSha = options.currentHead(session.cwd);
-      if (!headSha)
-        continue;
-      const binding = options.sessionBindings.get(session.sessionId);
-      const headChanged = headSha !== session.headSha;
-      const needsDiscovery = !binding?.changeId && Date.now() - (binding?.checkedAt ?? 0) >= 15000;
-      if (!headChanged && !needsDiscovery)
-        continue;
-      await options.registerSession(session.cwd, session.sessionId, true);
-    } catch (error) {
-      console.error(`[criticd] HEAD observation failed for ${session.sessionId}:`, error);
-    }
-  }
-}
-// node_modules/convex/dist/esm/server/components/index.js
-function createChildComponents(root, pathParts) {
-  const handler = {
-    get(_, prop) {
-      if (typeof prop === "string") {
-        const newParts = [...pathParts, prop];
-        return createChildComponents(root, newParts);
-      } else if (prop === toReferencePath) {
-        if (pathParts.length < 1) {
-          const found = [root, ...pathParts].join(".");
-          throw new Error(`API path is expected to be of the form \`${root}.childComponent.functionName\`. Found: \`${found}\``);
-        }
-        return `_reference/childComponent/` + pathParts.join("/");
-      } else {
-        return;
-      }
-    }
-  };
-  return new Proxy({}, handler);
-}
-var componentsGeneric = () => createChildComponents("components", []);
-// convex/_generated/api.js
-var api = anyApi;
-var components = componentsGeneric();
-
-// cli/src/daemon-subscriptions.ts
-function convexDeploymentUrl(siteUrl) {
-  const url = new URL(siteUrl);
-  if (url.hostname.endsWith(".convex.site")) {
-    url.hostname = url.hostname.replace(/\.convex\.site$/, ".convex.cloud");
-  } else if ((url.hostname === "localhost" || url.hostname === "127.0.0.1") && url.port === "3211") {
-    url.port = "3210";
-  }
-  return url.origin;
-}
-function subscribeDaemonQueues(options) {
-  const stopQuestions = options.client.onUpdate(api.agentBridge.watchPending, {
-    deviceId: options.deviceId,
-    deviceKeyHash: options.deviceKeyHash
-  }, (questions) => {
-    options.onHealthy();
-    options.updateQuestions(questions);
-  }, (error) => options.onError("question", error));
-  const stopPushes = options.client.onUpdate(api.localPushes.watchPushCommands, {
-    deviceId: options.deviceId,
-    deviceKeyHash: options.deviceKeyHash
-  }, options.updatePushes, (error) => options.onError("push", error));
-  const stopOnboarding = options.client.onUpdate(api.onboarding.watchCommands, {
-    deviceId: options.deviceId,
-    deviceKeyHash: options.deviceKeyHash
-  }, options.updateOnboarding, (error) => options.onError("onboarding", error));
-  const stopRemotePublications = options.client.onUpdate(api.remotePublications.watchPending, {
-    deviceId: options.deviceId,
-    deviceKeyHash: options.deviceKeyHash
-  }, options.updateRemotePublications, (error) => options.onError("publication", error));
-  return () => {
-    stopQuestions();
-    stopPushes();
-    stopOnboarding();
-    stopRemotePublications();
-  };
-}
-
-// cli/src/workspace-recovery.ts
-import { existsSync as existsSync6 } from "node:fs";
-var RESTORED_WORKSPACE_LIMIT = 20;
-var RESTORED_WORKSPACE_MAX_AGE_MS = 30 * 24 * 60 * 60000;
-function rememberWorkspaceSessions(sessions, sessionByDirectory) {
-  const newestByDirectory = new Map;
-  for (const session of [...sessions].sort((left, right) => left.updatedAt - right.updatedAt)) {
-    sessionByDirectory.set(session.cwd, session.sessionId);
-    newestByDirectory.set(session.cwd, session);
-  }
-  return [...newestByDirectory.values()].filter((session) => session.updatedAt >= Date.now() - RESTORED_WORKSPACE_MAX_AGE_MS).slice(-RESTORED_WORKSPACE_LIMIT);
-}
-function restoreWorkspaceSnapshots(sessions, sessionByDirectory, localSnapshots) {
-  for (const session of sessions) {
-    if (!existsSync6(session.cwd))
-      continue;
-    localSnapshots.schedule(session.cwd, sessionByDirectory.get(session.cwd) ?? session.sessionId, 0, true);
-  }
-}
-
-// cli/src/token-hash.ts
-import { createHash as createHash4 } from "node:crypto";
-function tokenHash(token) {
-  return createHash4("sha256").update(token).digest("hex");
-}
-
-// cli/src/onboarding-runner.ts
-import { randomBytes } from "node:crypto";
-
-// cli/src/onboarding-example.ts
-import { spawn as spawn3 } from "node:child_process";
-import { mkdir as mkdir3, realpath as realpath2, rm as rm3, writeFile as writeFile5 } from "node:fs/promises";
-import { join as join4, relative as relative2, resolve as resolve5 } from "node:path";
-var starterFiles = {
-  "package.json": `${JSON.stringify({
-    name: "critic-life",
-    private: true,
-    type: "module",
-    scripts: { test: "bun test" }
-  }, null, 2)}
-`,
-  "src/life.ts": `export type Cell = readonly [number, number]
-
-function key(x: number, y: number) {
-  return \`${"${x},${y}"}\`
-}
-
-export function nextGeneration(
-  cells: readonly Cell[],
-  width: number,
-  height: number,
-) {
-  const alive = new Set(cells.map(([x, y]) => key(x, y)))
-  const neighbors = new Map<string, number>()
-
-  for (const [x, y] of cells) {
-    for (let dy = -1; dy <= 1; dy += 1) {
-      for (let dx = -1; dx <= 1; dx += 1) {
-        if (dx === 0 && dy === 0) continue
-        const nextX = x + dx
-        const nextY = y + dy
-        if (nextX < 0 || nextX >= width || nextY < 0 || nextY >= height) {
-          continue
-        }
-        const neighbor = key(nextX, nextY)
-        neighbors.set(neighbor, (neighbors.get(neighbor) ?? 0) + 1)
-      }
-    }
-  }
-
-  return [...neighbors.entries()].flatMap(([coordinate, count]) => {
-    const [x, y] = coordinate.split(',').map(Number)
-    return count === 3 || (count === 2 && alive.has(coordinate))
-      ? ([[x, y]] as Cell[])
-      : []
-  })
-}
-`,
-  "test/life.test.ts": `import { expect, test } from 'bun:test'
-import { nextGeneration } from '../src/life'
-
-test('a block remains stable', () => {
-  const block = [
-    [1, 1],
-    [1, 2],
-    [2, 1],
-    [2, 2],
-  ] as const
-  expect(nextGeneration(block, 5, 5).map(String).sort()).toEqual(
-    block.map(String).sort(),
-  )
-})
-`,
-  "README.md": `# Critic Life
-
-A tiny Conway's Game of Life implementation used by Critic onboarding.
-`
-};
-async function command(args, cwd) {
-  const child = spawn3(args[0], args.slice(1), {
-    cwd,
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-  const [exitCode, stdout, stderr] = await Promise.all([
-    waitForChild(child),
-    readStream(child.stdout),
-    readStream(child.stderr)
-  ]);
-  if (exitCode !== 0) {
-    throw new Error(stderr.trim() || stdout.trim() || `${args[0]} exited with ${exitCode}`);
-  }
-}
-async function prepareOnboardingExample(input) {
-  const workspacePath = join4(onboardingDirectory, input.commandId, "critic-life");
-  await rm3(workspacePath, { recursive: true, force: true });
-  for (const [path, contents] of Object.entries(starterFiles)) {
-    const target = join4(workspacePath, path);
-    await mkdir3(resolve5(target, ".."), { recursive: true, mode: 448 });
-    await writeFile5(target, contents, { mode: 384 });
-  }
-  await command(["git", "init", "-b", "main"], workspacePath);
-  await command(["git", "config", "user.name", "Critic Onboarding"], workspacePath);
-  await command(["git", "config", "user.email", "onboarding@critic.run"], workspacePath);
-  await command([
-    "git",
-    "remote",
-    "add",
-    "origin",
-    `https://github.com/${input.repositoryOwner}/${input.repositoryName}.git`
-  ], workspacePath);
-  await command(["git", "add", "."], workspacePath);
-  await command(["git", "commit", "-m", "Start Critic onboarding example"], workspacePath);
-  return {
-    workspacePath,
-    workspaceFingerprint: workspaceFingerprint(workspacePath)
-  };
-}
-async function cleanupOnboardingExample(workspacePath) {
-  const root = await realpath2(onboardingDirectory);
-  const target = resolve5(workspacePath);
-  const child = relative2(root, target);
-  if (!child || child.startsWith("..") || resolve5(root, child) !== target) {
-    throw new Error("Refusing to remove a workspace outside Critic onboarding");
-  }
-  await rm3(resolve5(target, ".."), { recursive: true, force: true });
-}
-
-// cli/src/onboarding-runner.ts
-function createOnboardingRunner(agentCall, workspaceCleanupIsSafe = () => true) {
-  const pending = new Map;
-  let running = false;
-  let retryTimer;
-  function retry(command2) {
-    pending.set(command2._id, command2);
-    if (retryTimer)
-      return;
-    retryTimer = setTimeout(() => {
-      retryTimer = undefined;
-      drain();
-    }, 1000);
-    retryTimer.unref();
-  }
-  async function drain() {
-    if (running)
-      return;
-    running = true;
-    try {
-      while (pending.size) {
-        const command2 = pending.values().next().value;
-        if (!command2)
-          break;
-        pending.delete(command2._id);
-        if (command2.kind === "cleanup" && command2.workspacePath && !workspaceCleanupIsSafe(command2.workspacePath)) {
-          retry(command2);
-          break;
-        }
-        const leaseToken = randomBytes(32).toString("hex");
-        let claim = null;
-        try {
-          claim = await agentCall("claim_onboarding_command", { commandId: command2._id, leaseToken });
-          if (!claim)
-            continue;
-          if (claim.kind === "prepare") {
-            const workspace = await prepareOnboardingExample({
-              commandId: claim.commandId,
-              repositoryOwner: claim.repositoryOwner,
-              repositoryName: claim.repositoryName
-            });
-            await agentCall("complete_onboarding_command", {
-              commandId: claim.commandId,
-              leaseToken,
-              ...workspace
-            });
-          } else {
-            if (claim.workspacePath && !workspaceCleanupIsSafe(claim.workspacePath)) {
-              await agentCall("defer_onboarding_command", {
-                commandId: claim.commandId,
-                leaseToken
-              });
-              retry(command2);
-              break;
-            }
-            if (claim.workspacePath) {
-              await cleanupOnboardingExample(claim.workspacePath);
-            }
-            await agentCall("complete_onboarding_command", {
-              commandId: claim.commandId,
-              leaseToken
-            });
-          }
-        } catch (error) {
-          if (!claim)
-            continue;
-          await agentCall("fail_onboarding_command", {
-            commandId: claim.commandId,
-            leaseToken,
-            error: error instanceof Error ? error.message : String(error)
-          }).catch(() => {
-            return;
-          });
-        }
-      }
-    } finally {
-      running = false;
-    }
-  }
-  return {
-    update(commands) {
-      for (const command2 of commands)
-        pending.set(command2._id, command2);
-      drain();
-    }
-  };
-}
-
-// cli/src/local-push-runner.ts
-import { randomBytes as randomBytes2 } from "node:crypto";
-import { spawn as spawn5 } from "node:child_process";
-
-// cli/src/authoring-push.ts
-import { spawn as spawn4 } from "node:child_process";
-function pushExecutionMode(worktreeClean) {
-  return worktreeClean ? "direct" : "authoring-agent";
-}
-function authoringPushCheckpointReason(branch) {
-  return [
-    "The user selected Push Changes in Critic for this workspace.",
-    "Complete the push in this current authoring task; do not fork, resume, or delegate it to another executor.",
-    `The current branch is ${branch}.`,
-    "Do not change the implementation, rewrite files, or add unrelated work.",
-    "Critic has already staged the exact approved file manifest. Do not run git add or stage any additional path.",
-    "Review the staged diff, write an appropriate commit message, commit exactly that staged change, and push the current branch to its configured Git remote.",
-    "If no upstream exists, set one. Then finish again so Critic can verify the remote HEAD and complete the queued command.",
-    "If committing or pushing cannot be completed safely, explain the concrete blocker without altering the approved implementation."
-  ].join(`
-`);
-}
-function approvedSnapshotPaths(files) {
-  return [
-    ...new Set(files.flatMap((file) => file.oldPath ? [file.oldPath, file.path] : [file.path]))
-  ];
-}
-async function stageApprovedSnapshotFiles(cwd, files) {
-  const paths = approvedSnapshotPaths(files);
-  for (let index = 0;index < paths.length; index += 200) {
-    const child = spawn4("git", [
-      "--literal-pathspecs",
-      "add",
-      "-A",
-      "--",
-      ...paths.slice(index, index + 200)
-    ], {
-      cwd,
-      stdio: ["ignore", "ignore", "pipe"]
-    });
-    const [exitCode, stderr] = await Promise.all([
-      waitForChild(child),
-      readStream(child.stderr)
-    ]);
-    if (exitCode !== 0) {
-      throw new Error(stderr.trim() || "Critic could not stage the approved local change");
-    }
-  }
-}
-
-// cli/src/local-push-runner.ts
-async function runCommand(command2, cwd) {
-  const child = spawn5(command2[0], command2.slice(1), {
-    cwd,
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-  const [exitCode, stdout, stderr] = await Promise.all([
-    waitForChild(child),
-    readStream(child.stdout),
-    readStream(child.stderr)
-  ]);
-  if (exitCode !== 0) {
-    throw new Error(stderr.trim() || stdout.trim() || `${command2[0]} exited with ${exitCode}`);
-  }
-  return stdout.trim();
-}
-async function commandOutput(command2, cwd) {
-  return await runCommand(command2, cwd).catch(() => null);
-}
-async function workspaceForClaim(claim, hookSessions, repositories) {
-  const cwd = claim.worktreeClean ? await repositories.resolveWorkspace(claim.workspaceFingerprint) : claim.sourceSessionId ? hookSessions.get(claim.sourceSessionId)?.cwd : undefined;
-  if (!cwd)
-    throw new Error("The authoring workspace is not available");
-  if (workspaceFingerprint(cwd) !== claim.workspaceFingerprint) {
-    throw new Error("The authoring workspace identity changed");
-  }
-  return cwd;
-}
-async function executeCleanPush(cwd, claim) {
-  const snapshot = await scanLocalSnapshot(cwd);
-  if (!snapshot.worktreeClean || snapshot.digest !== claim.expectedDigest) {
-    throw new Error("Workspace changed since the push was requested. Sync it and try again.");
-  }
-  await runCommand(["git", "push", "--set-upstream", "origin", "HEAD"], cwd);
-}
-async function snapshotStatus(receipt, sourceSessionId, agentCall) {
-  return await agentCall("local_snapshot_status", {
-    sourceSessionId,
-    workspaceFingerprint: receipt.workspaceFingerprint
-  });
-}
-async function ensureApprovedFilesAreStaged(cwd, receipt, sourceSessionId, agentCall, localSnapshots) {
-  await localSnapshots.flush(cwd, sourceSessionId, true);
-  const status = await snapshotStatus(receipt, sourceSessionId, agentCall);
-  if (!status || status.syncState !== "synced" || status.digest !== receipt.expectedDigest) {
-    return false;
-  }
-  const approved = await scanLocalSnapshot(cwd);
-  if (approved.digest !== receipt.expectedDigest)
-    return false;
-  await stageApprovedSnapshotFiles(cwd, approved.files);
-  const staged = await scanLocalSnapshot(cwd);
-  if (staged.digest !== receipt.expectedDigest) {
-    throw new Error("Workspace changed while Critic staged the approved files. Review it and try again.");
-  }
-  return true;
-}
-async function remoteHeadMatches(cwd, branch) {
-  const [currentBranch, head, upstream] = await Promise.all([
-    commandOutput(["git", "branch", "--show-current"], cwd),
-    commandOutput(["git", "rev-parse", "HEAD"], cwd),
-    commandOutput(["git", "rev-parse", "@{upstream}"], cwd)
-  ]);
-  return Boolean(currentBranch === branch && head && upstream && head === upstream);
-}
-async function authoredPushCompleted(cwd, receipt, sourceSessionId, agentCall, localSnapshots) {
-  await localSnapshots.flush(cwd, sourceSessionId, true);
-  const [status, snapshot, pushed] = await Promise.all([
-    snapshotStatus(receipt, sourceSessionId, agentCall),
-    scanLocalSnapshot(cwd),
-    remoteHeadMatches(cwd, receipt.branch)
-  ]);
-  return Boolean(status && status.syncState === "synced" && status.worktreeClean && status.patchDigest === receipt.expectedPatchDigest && snapshot.worktreeClean && snapshot.patchDigest === receipt.expectedPatchDigest && pushed);
-}
-function createLocalPushRunner(agentCall, hookSessions, localSnapshots, repositories) {
-  const pending = new Map;
-  let runningCleanPush = false;
-  async function failClaim(commandId, leaseToken, error) {
-    await agentCall("fail_local_push", {
-      commandId,
-      leaseToken,
-      error: error instanceof Error ? error.message : String(error)
-    }).catch(() => {
-      return;
-    });
-  }
-  function nextCleanPush() {
-    return [...pending.values()].find((candidate) => candidate.worktreeClean === true);
-  }
-  async function drainCleanPushes() {
-    if (runningCleanPush)
-      return;
-    runningCleanPush = true;
-    try {
-      let command2 = nextCleanPush();
-      while (command2) {
-        pending.delete(command2._id);
-        const leaseToken = randomBytes2(32).toString("hex");
-        let claim = null;
-        try {
-          claim = await agentCall("claim_local_push", {
-            commandId: command2._id,
-            leaseToken,
-            sourceSessionId: command2.sourceSessionId
-          });
-          if (!claim)
-            continue;
-          const cwd = await workspaceForClaim(claim, hookSessions, repositories);
-          if (pushExecutionMode(claim.worktreeClean) !== "direct") {
-            throw new Error("Critic received the wrong push execution mode");
-          }
-          await executeCleanPush(cwd, claim);
-          await agentCall("complete_local_push", {
-            commandId: claim.commandId,
-            leaseToken
-          });
-        } catch (error) {
-          if (claim)
-            await failClaim(claim.commandId, leaseToken, error);
-        }
-        command2 = nextCleanPush();
-      }
-    } finally {
-      runningCleanPush = false;
-      if (nextCleanPush())
-        drainCleanPushes();
-    }
-  }
-  async function checkpoint(sourceSessionId) {
-    const session = hookSessions.get(sourceSessionId);
-    if (!session)
-      return {};
-    const existing = session.authoringPush;
-    if (existing) {
-      try {
-        if (await authoredPushCompleted(session.cwd, existing, sourceSessionId, agentCall, localSnapshots)) {
-          await agentCall("complete_local_push", {
-            commandId: existing.commandId,
-            leaseToken: existing.leaseToken
-          });
-          await hookSessions.clearAuthoringPush(sourceSessionId);
-          return {};
-        }
-        const staged = await ensureApprovedFilesAreStaged(session.cwd, existing, sourceSessionId, agentCall, localSnapshots);
-        if (!staged) {
-          throw new Error("Workspace changed since the push was requested. Sync it and try again.");
-        }
-        return {
-          requiresAuthoringPush: true,
-          branch: existing.branch
-        };
-      } catch (error) {
-        await failClaim(existing.commandId, existing.leaseToken, error);
-        await hookSessions.clearAuthoringPush(sourceSessionId);
-        return {
-          error: error instanceof Error ? error.message : String(error)
-        };
-      }
-    }
-    const command2 = [...pending.values()].find((candidate) => candidate.worktreeClean !== true && candidate.sourceSessionId === sourceSessionId);
-    if (!command2)
-      return {};
-    pending.delete(command2._id);
-    const leaseToken = randomBytes2(32).toString("hex");
-    let claim = null;
-    try {
-      claim = await agentCall("claim_local_push", {
-        commandId: command2._id,
-        leaseToken,
-        sourceSessionId
-      });
-      if (!claim)
-        return {};
-      const cwd = await workspaceForClaim(claim, hookSessions, repositories);
-      if (pushExecutionMode(claim.worktreeClean) !== "authoring-agent") {
-        throw new Error("Critic received the wrong push execution mode");
-      }
-      const receipt = {
-        commandId: claim.commandId,
-        leaseToken,
-        branch: claim.branch,
-        expectedDigest: claim.expectedDigest,
-        expectedPatchDigest: claim.expectedPatchDigest,
-        workspaceFingerprint: claim.workspaceFingerprint
-      };
-      await hookSessions.markAuthoringPush(sourceSessionId, receipt);
-      const staged = await ensureApprovedFilesAreStaged(cwd, receipt, sourceSessionId, agentCall, localSnapshots);
-      if (!staged) {
-        throw new Error("Workspace changed since the push was requested. Sync it and try again.");
-      }
-      return {
-        requiresAuthoringPush: true,
-        branch: claim.branch
-      };
-    } catch (error) {
-      if (claim)
-        await failClaim(claim.commandId, leaseToken, error);
-      await hookSessions.clearAuthoringPush(sourceSessionId);
-      return {
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
-  }
-  return {
-    update(commands) {
-      const pendingIds = new Set(commands.map((command2) => command2._id));
-      for (const commandId of pending.keys()) {
-        if (!pendingIds.has(commandId))
-          pending.delete(commandId);
-      }
-      for (const command2 of commands)
-        pending.set(command2._id, command2);
-      drainCleanPushes();
-    },
-    checkpoint
-  };
-}
-
-// cli/src/agent-call.ts
-function createAgentCall(config) {
-  const baseUrl = config.convexUrl.replace(/\/$/, "");
-  return async (action, payload = {}) => {
-    const response = await fetch(`${baseUrl}/agent`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${config.authToken}`,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({ action, ...payload })
-    });
-    const body = await response.json();
-    if (!response.ok || !body.ok) {
-      throw new Error(body.error ?? `Critic request failed (${response.status})`);
-    }
-    return body.result;
-  };
-}
-
-// cli/src/daemon-lease.ts
-import { readFileSync } from "node:fs";
-import { spawnSync as spawnSync2 } from "node:child_process";
-import { randomBytes as randomBytes3 } from "node:crypto";
-import {
-  chmod as chmod4,
-  readFile as readFile8,
-  rename as rename4,
-  stat as stat2,
-  unlink as unlink2,
-  utimes,
-  writeFile as writeFile6
-} from "node:fs/promises";
-function createDaemonLease(protocolVersion, runtimeVersion, runtimeInstanceId, startedAt) {
-  const lease = {
-    schemaVersion: 1,
-    protocolVersion,
-    runtimeVersion,
-    runtimeInstanceId,
-    leaseNonce: randomBytes3(16).toString("hex"),
-    pid: process.pid,
-    processStartIdentity: processStartIdentity(process.pid),
-    startedAt
-  };
-  if (!lease.processStartIdentity) {
-    throw new Error("Critic could not verify the daemon process identity");
-  }
-  return lease;
-}
-function createCurrentDaemonLease(runtimeInstanceId, startedAt) {
-  return createDaemonLease(criticDaemonProtocolVersion, criticPluginVersion, runtimeInstanceId, startedAt);
-}
-function processOutput(command2) {
-  try {
-    const result = spawnSync2(command2[0], command2.slice(1), {
-      cwd: configDirectory,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"]
-    });
-    return result.status === 0 ? result.stdout.trim() : "";
-  } catch {
-    return "";
-  }
-}
-function processStartIdentity(pid) {
-  try {
-    const contents = readFileSync(`/proc/${pid}/stat`, "utf8");
-    const fields = contents.slice(contents.lastIndexOf(")") + 2).split(" ");
-    if (fields[19])
-      return `proc:${fields[19]}`;
-  } catch {}
-  const started = processOutput(["ps", "-o", "lstart=", "-p", String(pid)]);
-  return started ? `ps:${started}` : "";
-}
-function processCommand(pid) {
-  return processOutput(["ps", "-o", "command=", "-p", String(pid)]);
-}
-function socketOwnerPid(path) {
-  const value = processOutput(["lsof", "-t", path]).split(`
-`)[0];
-  const pid = Number(value);
-  return Number.isInteger(pid) && pid > 1 ? pid : 0;
-}
-function validLease(value) {
-  if (!value || typeof value !== "object")
-    return false;
-  const lease = value;
-  return Boolean(lease.schemaVersion === 1 && typeof lease.protocolVersion === "number" && typeof lease.runtimeVersion === "string" && isCriticVersion(lease.runtimeVersion) && typeof lease.runtimeInstanceId === "string" && lease.runtimeInstanceId && typeof lease.leaseNonce === "string" && /^[a-f0-9]{32,}$/.test(lease.leaseNonce) && Number.isInteger(lease.pid) && Number(lease.pid) > 1 && typeof lease.processStartIdentity === "string" && lease.processStartIdentity && typeof lease.startedAt === "number");
-}
-async function readDaemonLease(path) {
-  try {
-    const value = JSON.parse(await readFile8(path, "utf8"));
-    return validLease(value) ? value : null;
-  } catch {
-    return null;
-  }
-}
-function sameDaemonLease(left, right) {
-  return Boolean(left && left.runtimeInstanceId === right.runtimeInstanceId && left.leaseNonce === right.leaseNonce && left.pid === right.pid && left.processStartIdentity === right.processStartIdentity);
-}
-async function assertNoLiveDaemon() {
-  const lease = await readDaemonLease(daemonLeasePath);
-  if (lease && processStartIdentity(lease.pid) === lease.processStartIdentity) {
-    throw new Error(`Critic daemon ${lease.pid} is already running; stop it before starting another bridge`);
-  }
-  const socketOwner = socketOwnerPid(socketPath);
-  if (socketOwner && socketOwner !== process.pid) {
-    throw new Error(`Critic daemon ${socketOwner} still owns the local bridge socket`);
-  }
-}
-async function writeDaemonLease(path, lease) {
-  const temporary = `${path}.${process.pid}.tmp`;
-  await writeFile6(temporary, `${JSON.stringify(lease, null, 2)}
-`, {
-    mode: 384
-  });
-  await chmod4(temporary, 384);
-  await rename4(temporary, path);
-}
-async function touchDaemonLease(path) {
-  const now = new Date;
-  await utimes(path, now, now);
-}
-async function maintainDaemonLease(path, lease, onError, onOwnershipLost) {
-  await writeDaemonLease(path, lease);
-  const heartbeat = setInterval(() => {
-    readDaemonLease(path).then(async (current) => {
-      if (!sameDaemonLease(current, lease)) {
-        clearInterval(heartbeat);
-        onOwnershipLost?.();
-        return;
-      }
-      await touchDaemonLease(path);
-    }).catch(onError);
-  }, 1e4);
-  return () => clearInterval(heartbeat);
-}
-async function establishCurrentDaemonLease(lease, onError, onOwnershipLost) {
-  await chmod4(socketPath, 384);
-  await writeFile6(daemonPidPath, `${process.pid}
-`, { mode: 384 });
-  return await maintainDaemonLease(daemonLeasePath, lease, onError, onOwnershipLost);
-}
-async function daemonLeaseAge(path) {
-  return await stat2(path).then((value) => Date.now() - value.mtimeMs).catch(() => Number.POSITIVE_INFINITY);
-}
-async function removeDaemonLease(path, expected) {
-  const current = await readDaemonLease(path);
-  if (current?.runtimeInstanceId === expected.runtimeInstanceId && current.leaseNonce === expected.leaseNonce) {
-    await unlink2(path).catch(() => {
-      return;
-    });
-    return true;
-  }
-  return false;
-}
-function assertDaemonLeaseOwner(lease, payload) {
-  if (payload.runtimeInstanceId !== lease.runtimeInstanceId || payload.leaseNonce !== lease.leaseNonce) {
-    throw new Error("Critic daemon ownership changed");
-  }
-}
-function requestDaemonShutdown(lease, payload, shutdown) {
-  assertDaemonLeaseOwner(lease, payload);
-  setTimeout(shutdown, 25);
-}
-async function releaseDaemonLease(options) {
-  if (!await removeDaemonLease(options.leasePath, options.lease))
-    return;
-  const pidContents = await readFile8(options.pidPath, "utf8").catch(() => "");
-  if (Number(pidContents.trim()) === process.pid) {
-    await unlink2(options.pidPath).catch(() => {
-      return;
-    });
-  }
-  if (!socketOwnerPid(options.socketPath)) {
-    await unlink2(options.socketPath).catch(() => {
-      return;
-    });
-  }
-}
-async function releaseCurrentDaemonLease(lease) {
-  await releaseDaemonLease({
-    leasePath: daemonLeasePath,
-    pidPath: daemonPidPath,
-    socketPath,
-    lease
-  });
-}
-
-// cli/src/question-repository.ts
-async function questionRepository(claim, hookSessions, repositories) {
-  const preferred = hookSessions.get(claim.targetSessionId)?.cwd;
-  if (!preferred)
-    return unavailableQuestionRepository(claim);
-  try {
-    const cwd = await repositories.resolve(claim.workspace.owner, claim.workspace.repository, preferred);
-    return {
-      cwd,
-      context: {
-        root: cwd,
-        baseSha: claim.workspace.baseSha,
-        criticHeadSha: claim.workspace.headSha
-      }
-    };
-  } catch {
-    return unavailableQuestionRepository(claim);
-  }
-}
-function unavailableQuestionRepository(claim) {
-  return {
-    cwd: unavailableRepositoryDirectory,
-    context: {
-      root: unavailableRepositoryDirectory,
-      baseSha: claim.workspace.baseSha,
-      criticHeadSha: claim.workspace.headSha,
-      unavailableReason: "the authored checkout is not available on the connected device"
-    }
-  };
-}
-function repositoryAvailabilityInput(input, repository) {
-  return repository.unavailableReason ? [
-    ...input,
-    {
-      type: "text",
-      text: `
-
----
-
-Critic repository tools are unavailable for this answer because ${repository.unavailableReason}. Preserve the supplied review context and authored-session identity; explain any limitation instead of guessing from another checkout.`
-    }
-  ] : input;
-}
-
-// cli/src/daemon-server.ts
-import { createServer } from "node:http";
-import { chmod as chmod5 } from "node:fs/promises";
-import { once } from "node:events";
-var MAX_IPC_BODY_BYTES = 8 * 1024 * 1024;
-async function startDaemonServer(socketPath2, handle) {
-  const server = createServer(async (request, response) => {
-    if (request.method !== "POST" || request.url !== "/rpc") {
-      response.writeHead(405, { "content-type": "application/json" });
-      response.end(JSON.stringify({ ok: false, error: "Method not allowed" }));
-      return;
-    }
-    try {
-      let body = "";
-      request.setEncoding("utf8");
-      for await (const chunk of request) {
-        body += String(chunk);
-        if (Buffer.byteLength(body) > MAX_IPC_BODY_BYTES) {
-          throw new Error("Critic daemon request is too large");
-        }
-      }
-      const result = await handle(JSON.parse(body));
-      response.writeHead(result.status, {
-        "content-type": "application/json"
-      });
-      response.end(JSON.stringify(result.body));
-    } catch (error) {
-      response.writeHead(400, { "content-type": "application/json" });
-      response.end(JSON.stringify({
-        ok: false,
-        error: error instanceof Error ? error.message : "Invalid request"
-      }));
-    }
-  });
-  server.listen(socketPath2);
-  await once(server, "listening");
-  await chmod5(socketPath2, 384);
-  return {
-    stop() {
-      server.closeAllConnections();
-      server.close();
-    }
-  };
-}
-
-// cli/src/remote-publication-runner.ts
-import { randomBytes as randomBytes4 } from "node:crypto";
-function commandPayload(items) {
-  const explanations = [];
-  const deleteIdentityKeys = [];
-  for (const item of items) {
-    if (!item || typeof item !== "object") {
-      throw new Error("Remote publication item is invalid");
-    }
-    const record = item;
-    if (record.type === "explanation") {
-      explanations.push(record.value);
-    } else if (record.type === "deletion" && typeof record.value === "string") {
-      deleteIdentityKeys.push(record.value);
-    } else {
-      throw new Error("Remote publication item is invalid");
-    }
-  }
-  return { explanations, deleteIdentityKeys };
-}
-async function executeRemotePublication(pending, runtime) {
-  const leaseToken = randomBytes4(32).toString("hex");
-  const leaseTokenHash = tokenHash(leaseToken);
-  const claim = await runtime.agentCall("remote_publication_claim", {
-    commandId: pending._id,
-    tokenHash: leaseTokenHash
-  });
-  if (!claim)
-    return;
-  try {
-    const items = [];
-    for (let sequence = 0;sequence < claim.batchCount; sequence += 1) {
-      const batch = await runtime.agentCall("remote_publication_batch", {
-        commandId: claim.commandId,
-        tokenHash: leaseTokenHash,
-        sequence
-      });
-      items.push(...batch);
-    }
-    const { cwd, sourceSessionId } = ipcGitContext({ sourceSessionId: claim.sourceSessionId }, runtime);
-    const result = await publishFromIpc({
-      method: "publish_patchset",
-      payload: commandPayload(items)
-    }, runtime, cwd, sourceSessionId, { target: claim.target, revision: claim.revision });
-    await runtime.agentCall("remote_publication_complete", {
-      commandId: claim.commandId,
-      tokenHash: leaseTokenHash,
-      result
-    });
-  } catch (error) {
-    await runtime.agentCall("remote_publication_fail", {
-      commandId: claim.commandId,
-      tokenHash: leaseTokenHash,
-      error: error instanceof Error ? error.message : "The authoring bridge could not publish this patchset"
-    }).catch(() => {
-      return;
-    });
-  }
-}
-function createRemotePublicationRunner(runtime) {
-  const pending = new Map;
-  let active = false;
-  const drain = async () => {
-    if (active)
-      return;
-    active = true;
-    try {
-      while (pending.size > 0) {
-        const next = pending.values().next().value;
-        if (!next)
-          break;
-        pending.delete(next._id);
-        await executeRemotePublication(next, runtime);
-      }
-    } finally {
-      active = false;
-      if (pending.size > 0)
-        drain();
-    }
-  };
-  return {
-    update(commands) {
-      const current = new Set(commands.map((command2) => command2._id));
-      for (const commandId of pending.keys()) {
-        if (!current.has(commandId))
-          pending.delete(commandId);
-      }
-      for (const command2 of commands)
-        pending.set(command2._id, command2);
-      drain();
-    }
-  };
-}
-
-// cli/src/daemon.ts
-function checkpointResult(status) {
-  const publicationReady = status.eligible && status.ready !== false && !status.published;
-  return {
-    target: status.target,
-    requiresPublication: publicationReady && Boolean(status.checkpointToken),
-    awaitingSync: status.eligible && status.ready === false || status.reason === "patchset_mismatch",
-    verificationError: publicationReady && !status.checkpointToken ? "checkpoint_token_unavailable" : !status.eligible && status.reason !== "no_open_change_for_head" && status.reason !== "patchset_mismatch" ? status.reason : undefined,
-    changeNumber: status.changeNumber,
-    criticUrl: status.criticUrl,
-    promotionRequiredFilePaths: status.promotionRequiredFilePaths,
-    checkpointToken: status.checkpointToken,
-    checkpointExpiresAt: status.checkpointExpiresAt
-  };
-}
-function output(command2, cwd) {
-  try {
-    const result = spawnSync3(command2[0], command2.slice(1), {
-      cwd,
-      encoding: "utf8"
-    });
-    if (result.status !== 0)
-      return null;
-    return result.stdout.trim();
-  } catch {
-    return null;
-  }
-}
-function gitContext(cwd) {
-  if (!existsSync7(cwd)) {
-    throw new Error(`The authored workspace is no longer available: ${cwd}`);
-  }
-  cwd = output(["git", "rev-parse", "--show-toplevel"], cwd) ?? cwd;
-  const remote = output(["git", "remote", "get-url", "origin"], cwd);
-  const coordinates2 = remote ? parseGitRemote(remote) : null;
-  const branch = output(["git", "branch", "--show-current"], cwd);
-  if (!coordinates2 || !branch) {
-    throw new Error("The current directory is not a GitHub branch with an origin");
-  }
-  return {
-    cwd,
-    ...coordinates2,
-    branch,
-    headSha: output(["git", "rev-parse", "HEAD"], cwd) ?? undefined,
-    workingDirectoryFingerprint: workspaceFingerprint(cwd)
-  };
-}
-function hookContext(payload) {
-  const hook = payload.hook && typeof payload.hook === "object" ? payload.hook : {};
-  const requestedCwd = typeof hook.cwd === "string" ? hook.cwd : typeof payload.cwd === "string" ? payload.cwd : configDirectory;
-  const sourceSessionId = findHookSessionId(payload.hook ?? payload);
-  if (!sourceSessionId) {
-    throw new Error("Agent hook did not include a session ID");
-  }
-  const event = typeof payload.event === "string" ? payload.event : undefined;
-  if (!isCriticLifecycleEvent(event)) {
-    throw new Error("Agent hook did not include a lifecycle event");
-  }
-  return {
-    hook,
-    cwd: output(["git", "rev-parse", "--show-toplevel"], requestedCwd) ?? requestedCwd,
-    sourceSessionId,
-    event
-  };
-}
-var PROGRESS_INTERVAL_MS = 120;
-var PROGRESS_BURST_BYTES = 1024;
-var MAX_CONCURRENT_QUESTIONS = 2;
-function createProgressReporter(agentCall, questionId, leaseTokenHash) {
-  let buffered = "";
-  let sequence = 0;
-  let timeout;
-  let pending = Promise.resolve();
-  const deliver = async (delta, currentSequence) => {
-    let lastError;
-    for (let attempt = 0;attempt < 5; attempt += 1) {
-      try {
-        await agentCall("progress", {
-          questionId,
-          tokenHash: leaseTokenHash,
-          delta,
-          sequence: currentSequence
-        });
-        return;
-      } catch (error) {
-        lastError = error;
-        await sleep(100 * 2 ** attempt);
-      }
-    }
-    throw lastError;
-  };
-  const dispatch = () => {
-    if (timeout)
-      clearTimeout(timeout);
-    timeout = undefined;
-    if (!buffered)
-      return;
-    const deltas = [];
-    while (buffered) {
-      deltas.push(buffered.slice(0, 16000));
-      buffered = buffered.slice(16000);
-    }
-    for (const delta of deltas) {
-      sequence += 1;
-      const currentSequence = sequence;
-      pending = pending.then(() => deliver(delta, currentSequence)).then(() => {
-        return;
-      });
-    }
-  };
-  return {
-    report(delta) {
-      buffered += delta;
-      if (buffered.length >= PROGRESS_BURST_BYTES) {
-        dispatch();
-      } else if (!timeout) {
-        timeout = setTimeout(dispatch, PROGRESS_INTERVAL_MS);
-      }
-    },
-    async flush() {
-      dispatch();
-      await pending;
-    }
-  };
-}
-async function answerQuestion(question, agentCall, execution) {
-  const leaseToken = randomBytes5(32).toString("hex");
-  const leaseHash = tokenHash(leaseToken);
-  let claimed = false;
-  let claimedAgent;
-  let partialAnswer = "";
-  try {
-    const claim = await agentCall("claim", {
-      questionId: question._id,
-      tokenHash: leaseHash
-    });
-    if (!claim)
-      return;
-    claimed = true;
-    claimedAgent = claim.agent;
-    const renewal = setInterval(() => {
-      agentCall("renew", {
-        questionId: question._id,
-        tokenHash: leaseHash
-      }).catch((error) => console.error("[criticd] lease renewal failed:", error));
-    }, 15000);
-    try {
-      const progress = createProgressReporter(agentCall, question._id, leaseHash);
-      const repository = await execution.repository(claim);
-      let beginResponse;
-      const report = (delta) => {
-        partialAnswer += delta;
-        progress.report(delta);
-      };
-      const request = {
-        input: repositoryAvailabilityInput(claim.input, repository.context),
-        repository: repository.context,
-        providerConversationId: claim.providerConversationId,
-        sourceConversationId: claim.targetSessionId,
-        cwd: repository.cwd
-      };
-      let result;
-      let completedAnswer;
-      if (claim.responseMode === "evaluate") {
-        const ambient = await runAmbientResponse({
-          request,
-          answer: (nextRequest) => execution.answer(claim.agent, nextRequest),
-          discard: (providerConversationId) => execution.discard(claim.agent, providerConversationId),
-          onAnswerStart: () => {
-            beginResponse = agentCall("begin_response", {
-              questionId: question._id,
-              tokenHash: leaseHash
-            });
-          },
-          onAnswerText: report
-        });
-        if (ambient.decision === "pass") {
-          await progress.flush();
-          await agentCall("pass", {
-            questionId: question._id,
-            tokenHash: leaseHash,
-            reason: ambient.reason,
-            providerConversationId: ambient.providerConversationId
-          });
-          return;
-        }
-        result = ambient.result;
-        completedAnswer = ambient.answer;
-      } else {
-        const requiredStream = new RequiredAnswerStream(report);
-        result = await execution.answer(claim.agent, {
-          ...request,
-          onDelta: (delta) => requiredStream.push(delta)
-        });
-        requiredStream.finish();
-        completedAnswer = requiredAnswerText(result.answer);
-      }
-      await beginResponse;
-      await progress.flush();
-      let completionError;
-      for (let attempt = 0;attempt < 3; attempt += 1) {
-        try {
-          await agentCall("complete", {
-            questionId: question._id,
-            tokenHash: leaseHash,
-            answer: completedAnswer,
-            providerConversationId: result.providerConversationId
-          });
-          completionError = undefined;
-          break;
-        } catch (error) {
-          completionError = error;
-          await sleep(250 * 2 ** attempt);
-        }
-      }
-      if (completionError)
-        throw completionError;
-    } finally {
-      clearInterval(renewal);
-    }
-  } catch (error) {
-    console.error("[criticd] question failed:", error);
-    if (claimed) {
-      const failure = agentFailureDetails(error);
-      await agentCall("fail", {
-        questionId: question._id,
-        tokenHash: leaseHash,
-        error: error instanceof Error ? error.message : String(error),
-        errorCode: failure.code,
-        retryable: failure.retryable,
-        providerConversationId: failure.providerConversationId,
-        partialAnswer: partialAnswer.trim().slice(0, 1e5) || undefined
-      }).catch(() => {
-        return;
-      });
-      if (claimedAgent) {
-        await execution.discard(claimedAgent, failure.providerConversationId).catch((cleanupError) => console.error("[criticd] failed conversation cleanup failed:", cleanupError));
-      }
-    }
-  }
-}
-function createQuestionRunner(agentCall, execution) {
-  const queued = new Map;
-  const active = new Set;
-  const drain = () => {
-    while (active.size < MAX_CONCURRENT_QUESTIONS && queued.size > 0) {
-      const question = queued.values().next().value;
-      if (!question)
-        return;
-      queued.delete(question._id);
-      if (active.has(question._id))
-        continue;
-      active.add(question._id);
-      answerQuestion(question, agentCall, execution).finally(() => {
-        active.delete(question._id);
-        drain();
-      });
-    }
-  };
-  return {
-    update(questions) {
-      const pendingIds = new Set(questions.map((question) => question._id));
-      for (const questionId of queued.keys()) {
-        if (!pendingIds.has(questionId))
-          queued.delete(questionId);
-      }
-      for (const question of questions) {
-        if (!active.has(question._id))
-          queued.set(question._id, question);
-      }
-      drain();
-    }
-  };
-}
-function bridgeReportPayload(options) {
-  return {
-    runtimeInstanceId: options.runtimeInstanceId,
-    protocolVersion: criticDaemonProtocolVersion,
-    pluginVersion: criticPluginVersion,
-    runtimeVersion: criticPluginVersion,
-    hookDefinitionHash: options.hookDefinitionHash,
-    activeSessionIds: [...options.runtimeSessionIds]
-  };
-}
-function startHeartbeat(options) {
-  return setInterval(() => {
-    options.agentCall("heartbeat", bridgeReportPayload(options)).then(async () => {
-      options.onHealthy();
-      await options.replayHooks();
-    }).catch(options.onFailure);
-  }, 20000);
-}
-function createBridgeStatus(options) {
-  let state = "starting";
-  let error;
-  let remote;
-  const healthy = () => {
-    state = "online";
-    error = undefined;
-  };
-  const failed = (cause) => {
-    state = "degraded";
-    error = cause instanceof Error ? cause.message : String(cause);
-  };
-  const refresh = async () => {
-    try {
-      const status = await options.agentCall("status", bridgeReportPayload(options));
-      if (status.agent !== options.config.agent || status.deviceId !== options.config.deviceId) {
-        await saveConfig({
-          ...options.config,
-          agent: status.agent,
-          deviceId: status.deviceId
-        });
-        options.config.agent = status.agent;
-        options.config.deviceId = status.deviceId;
-      }
-      remote = status;
-      healthy();
-      return status;
-    } catch (cause) {
-      failed(cause);
-      return null;
-    }
-  };
-  return {
-    healthy,
-    failed,
-    refresh,
-    state: () => state,
-    error: () => error,
-    remote: () => remote
-  };
-}
-async function prepareDaemonState() {
-  await ensureLocalDirectory();
-  await assertNoLiveDaemon();
-  await unlink3(socketPath).catch(() => {
-    return;
-  });
-}
-async function runDaemon() {
-  const config = await loadConfig();
-  if (!config)
-    throw new Error("Run `critic login --token … --url …` first");
-  await prepareDaemonState();
-  const agentCall = createAgentCall(config);
-  const localSnapshots = new LocalSnapshotSync(agentCall);
-  const startedAt = Date.now();
-  const runtimeInstanceId = randomBytes5(16).toString("hex");
-  const daemonLease = createCurrentDaemonLease(runtimeInstanceId, startedAt);
-  const hookDefinitionHash = createHash5("sha256").update(`critic-hooks:${criticHookDefinitionVersion}:${criticLifecycleEvents.join(":")}`).digest("hex");
-  const sessionByDirectory = new Map;
-  const sessionBindings = new Map;
-  const runtimeSessionIds = new Set;
-  const bridge = createBridgeStatus({
-    config,
-    agentCall,
-    runtimeInstanceId,
-    hookDefinitionHash,
-    runtimeSessionIds
-  });
-  const hookSessions = new HookSessionStore(hookStatePath);
-  await hookSessions.load();
-  const repositories = new RepositoryRegistry(repositoryRegistryPath);
-  await repositories.load();
-  const storedHookSessions = hookSessions.values();
-  const restorableWorkspaces = rememberWorkspaceSessions(storedHookSessions, sessionByDirectory);
-  const registerSession = async (cwd, sourceSessionId, discoverChange = false, hookEvent) => {
-    if (hookEvent)
-      runtimeSessionIds.add(sourceSessionId);
-    for (const [directory, sessionId] of sessionByDirectory) {
-      if (sessionId === sourceSessionId && directory !== cwd) {
-        sessionByDirectory.delete(directory);
-      }
-    }
-    sessionByDirectory.set(cwd, sourceSessionId);
-    const context = gitContext(cwd);
-    await repositories.remember(context.owner, context.repository, context.cwd);
-    await hookSessions.start({
-      sessionId: sourceSessionId,
-      cwd,
-      headSha: context.headSha,
-      turnState: hookEvent === "user-prompt-submit" ? "running" : undefined
-    });
-    const registration = await agentCall("session", {
-      ...context,
-      localSessionId: sourceSessionId,
-      runtimeInstanceId,
-      hookDefinitionHash,
-      discoverChange,
-      hookEvent
-    });
-    sessionBindings.set(sourceSessionId, {
-      ...registration,
-      checkedAt: Date.now(),
-      headSha: context.headSha
-    });
-    return registration;
-  };
-  const publicationStatus = async (context, sourceSessionId) => {
-    let status = {
-      eligible: false,
-      reason: "status_unavailable"
-    };
-    for (let attempt = 0;attempt < 6; attempt += 1) {
-      status = await agentCall("publication_status", {
-        ...context,
-        sourceSessionId,
-        workspaceFingerprint: context.workingDirectoryFingerprint,
-        preferLocal: context.preferLocal,
-        issueCheckpoint: true
-      });
-      if (status.reason !== "patchset_mismatch" && status.reason !== "patchset_syncing") {
-        break;
-      }
-      await sleep(500);
-    }
-    return status;
-  };
-  const localPushRunner = createLocalPushRunner(agentCall, hookSessions, localSnapshots, repositories);
-  const handleHook = createDaemonHookHandler({
-    sessionByDirectory,
-    hookSessions,
-    parseHook: hookContext,
-    registerSession,
-    localSnapshots,
-    gitContext,
-    hasUncommittedChanges: (cwd) => Boolean(output(["git", "status", "--porcelain"], cwd)),
-    publicationStatus,
-    checkpointResult,
-    authoringPushCheckpoint: localPushRunner.checkpoint
-  });
-  const replayHooks = async () => {
-    const processingPath = `${spoolPath}.processing`;
-    if (!await replayHookFile(processingPath, handleHook))
-      return;
-    try {
-      await rename5(spoolPath, processingPath);
-    } catch {
-      return;
-    }
-    await replayHookFile(processingPath, handleHook);
-  };
-  const questionRunner = createQuestionRunner(agentCall, {
-    answer: answerWithAgent,
-    discard: discardAgentConversation,
-    repository: (claim) => questionRepository(claim, hookSessions, repositories)
-  });
-  const onboardingRunner = createOnboardingRunner(agentCall, (workspacePath) => onboardingWorkspaceCleanupIsSafe(hookSessions.values(), workspacePath));
-  const lifecycle = { shutdown: () => {
-    return;
-  } };
-  const ipcRuntime = {
-    health: () => ({
-      ...daemonLease,
-      state: bridge.state(),
-      agent: config.agent,
-      deviceId: bridge.remote()?.deviceId ?? config.deviceId,
-      lastError: bridge.error()
-    }),
-    refreshStatus: bridge.refresh,
-    lastError: bridge.error,
-    shutdown: (payload) => requestDaemonShutdown(daemonLease, payload, lifecycle.shutdown),
-    handleHook,
-    agentCall,
-    sessionByDirectory,
-    hookSessions,
-    syncLocalSnapshot: (cwd, sourceSessionId) => localSnapshots.flush(cwd, sourceSessionId),
-    registerSession,
-    gitContext,
-    hasUncommittedChanges: (cwd) => Boolean(output(["git", "status", "--porcelain"], cwd))
-  };
-  const remotePublicationRunner = createRemotePublicationRunner(ipcRuntime);
-  const server = await startDaemonServer(socketPath, createIpcHandler(ipcRuntime));
-  const stopLeaseHeartbeat = await establishCurrentDaemonLease(daemonLease, (error) => console.error("[criticd] could not refresh local lease:", error), () => lifecycle.shutdown());
-  const initialStatus = await bridge.refresh();
-  if (initialStatus) {
-    await replayHooks();
-    restoreWorkspaceSnapshots(restorableWorkspaces, sessionByDirectory, localSnapshots);
-  }
-  if (!config.deviceId)
-    throw new Error("Critic device is not paired");
-  const convexClient = new ConvexClient2(convexDeploymentUrl(config.convexUrl));
-  const unsubscribeQueues = subscribeDaemonQueues({
-    client: convexClient,
-    deviceId: config.deviceId,
-    deviceKeyHash: tokenHash(config.authToken),
-    updateQuestions: questionRunner.update,
-    updatePushes: localPushRunner.update,
-    updateOnboarding: onboardingRunner.update,
-    updateRemotePublications: remotePublicationRunner.update,
-    onHealthy: bridge.healthy,
-    onError: (kind, error) => {
-      bridge.failed(error);
-      console.error(`[criticd] ${kind} subscription failed:`, error);
-    }
-  });
-  const heartbeat = startHeartbeat({
-    agentCall,
-    runtimeInstanceId,
-    hookDefinitionHash,
-    runtimeSessionIds,
-    replayHooks,
-    onHealthy: bridge.healthy,
-    onFailure: (error) => {
-      bridge.failed(error);
-      console.error("[criticd] heartbeat failed:", error);
-    }
-  });
-  const headObserver = startHeadObserver({
-    hookSessions,
-    runtimeSessionIds,
-    sessionBindings,
-    currentHead: (cwd) => output(["git", "rev-parse", "HEAD"], cwd),
-    registerSession
-  });
-  console.log(`criticd ${bridge.state()} as ${config.agent} (${bridge.remote()?.deviceId ?? config.deviceId})
-local socket: ${socketPath}`);
-  let stopping = false;
-  const shutdown = () => {
-    if (stopping)
-      return;
-    stopping = true;
-    clearInterval(heartbeat);
-    clearInterval(headObserver);
-    stopLeaseHeartbeat();
-    localSnapshots.stop();
-    unsubscribeQueues();
-    server.stop();
-    releaseCurrentDaemonLease(daemonLease).finally(() => {
-      convexClient.close();
-      process.exit(0);
-    });
-  };
-  lifecycle.shutdown = shutdown;
-  for (const signal of ["SIGINT", "SIGTERM"])
-    process.on(signal, shutdown);
-}
-
-// cli/src/daemon-manager.ts
-import { spawn as spawn6 } from "node:child_process";
-import { closeSync, openSync } from "node:fs";
-import {
-  chmod as chmod6,
-  copyFile,
-  readFile as readFile9,
-  rename as rename6,
-  stat as stat3,
-  unlink as unlink4,
-  writeFile as writeFile7
-} from "node:fs/promises";
-
-// cli/src/ipc.ts
-import { request as httpRequest } from "node:http";
-async function sendToDaemon(request) {
-  const response = await new Promise((resolve6, reject) => {
-    const body = JSON.stringify(request);
-    const call = httpRequest({
-      socketPath,
-      path: "/rpc",
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "content-length": Buffer.byteLength(body)
-      }
-    }, (incoming) => {
-      let responseBody = "";
-      incoming.setEncoding("utf8");
-      incoming.on("data", (chunk) => {
-        responseBody += String(chunk);
-      });
-      incoming.on("end", () => resolve6({
-        status: incoming.statusCode ?? 500,
-        body: responseBody
-      }));
-    });
-    call.once("error", reject);
-    call.end(body);
-  });
-  const result = JSON.parse(response.body);
-  if (response.status < 200 || response.status >= 300 || !result.ok)
-    throw new Error(result.error ?? "criticd rejected the request");
-  return result.result;
-}
-
-// cli/src/daemon-manager.ts
-var START_TIMEOUT_MS = 45000;
-var LEASE_STALE_MS = START_TIMEOUT_MS * 2;
-async function daemonHealth() {
-  return await sendToDaemon({ method: "health" });
-}
-async function daemonOwner() {
-  const health = await daemonHealth().catch(() => null);
-  if (!health)
-    return null;
-  const lease = await readDaemonLease(daemonLeasePath);
-  if (!lease || await daemonLeaseAge(daemonLeasePath) >= LEASE_STALE_MS || health.protocolVersion !== lease.protocolVersion || health.runtimeVersion !== lease.runtimeVersion || health.runtimeInstanceId !== lease.runtimeInstanceId || health.leaseNonce !== lease.leaseNonce || health.pid !== lease.pid || health.processStartIdentity !== lease.processStartIdentity || processStartIdentity(lease.pid) !== lease.processStartIdentity) {
-    return { health };
-  }
-  return { health, lease };
-}
-async function ensureDaemon(options) {
-  const requireOnline = options?.requireOnline ?? false;
-  const existing = await daemonOwner();
-  if (existing?.lease && isCompatibleDaemon(existing.health) && (!requireOnline || existing.health.state === "online")) {
-    return existing.health;
-  }
-  if (existing?.lease && isCompatibleDaemon(existing.health)) {
-    return await waitForDaemon(undefined, requireOnline);
-  }
-  await ensureLocalDirectory();
-  if (!await claimStartLock()) {
-    return await waitForDaemon(undefined, requireOnline);
-  }
-  try {
-    const raced = await daemonOwner();
-    if (raced?.lease && isCompatibleDaemon(raced.health)) {
-      return await waitForDaemon(undefined, requireOnline);
-    }
-    if (raced)
-      await stopRunningDaemon(raced);
-    await stopStaleDaemon();
-    const entrypoint = await stableDaemonEntrypoint();
-    const config = await loadConfig();
-    if (!config)
-      throw new Error("Critic is not configured");
-    const agentEnvironment = config.agent === "codex" ? { CRITIC_CODEX_EXECUTABLE: agentExecutable("codex") } : { CRITIC_CLAUDE_EXECUTABLE: agentExecutable("claude") };
-    const log2 = openSync(daemonLogPath, "w", 384);
-    await chmod6(daemonLogPath, 384);
-    let child;
-    try {
-      child = spawn6(process.execPath, [entrypoint, "daemon"], {
-        cwd: configDirectory,
-        detached: true,
-        stdio: ["ignore", log2, log2],
-        env: {
-          ...process.env,
-          CRITIC_DAEMON: "1",
-          ...agentEnvironment
-        }
-      });
-    } finally {
-      closeSync(log2);
-    }
-    child.unref();
-    return await waitForDaemon(child, requireOnline);
-  } finally {
-    await unlink4(daemonStartLockPath).catch(() => {
-      return;
-    });
-  }
-}
-async function restartDaemon(options) {
-  const owner = await daemonOwner();
-  if (owner?.lease && isCompatibleDaemon(owner.health) && compareCriticVersions(owner.health.runtimeVersion, criticPluginVersion) > 0) {
-    return await waitForDaemon(undefined, options?.requireOnline ?? false);
-  }
-  if (owner)
-    await stopRunningDaemon(owner);
-  await stopStaleDaemon();
-  return await ensureDaemon(options);
-}
-async function stableDaemonEntrypoint() {
-  const entrypoint = processEntrypoint();
-  if (entrypoint.endsWith(".ts"))
-    return entrypoint;
-  await ensureLocalDirectory();
-  const temporaryPath = `${daemonRuntimePath}.${process.pid}.tmp`;
-  await copyFile(entrypoint, temporaryPath);
-  await chmod6(temporaryPath, 448);
-  await rename6(temporaryPath, daemonRuntimePath);
-  return daemonRuntimePath;
-}
-async function claimStartLock() {
-  try {
-    await writeFile7(daemonStartLockPath, `${process.pid}
-`, {
-      flag: "wx",
-      mode: 384
-    });
-    return true;
-  } catch (error) {
-    const code2 = error.code;
-    if (code2 !== "EEXIST")
-      throw error;
-  }
-  const age = await stat3(daemonStartLockPath).then((value) => Date.now() - value.mtimeMs).catch(() => 0);
-  if (age > START_TIMEOUT_MS * 2) {
-    await unlink4(daemonStartLockPath).catch(() => {
-      return;
-    });
-    return await claimStartLock();
-  }
-  return false;
-}
-async function waitForDaemon(child, requireOnline) {
-  let spawnError;
-  child?.once("error", (error) => {
-    spawnError = error;
-  });
-  const deadline = Date.now() + START_TIMEOUT_MS;
-  let lastHealth = null;
-  while (Date.now() < deadline) {
-    if (spawnError)
-      throw spawnError;
-    if (child && (child.exitCode !== null || child.signalCode !== null)) {
-      throw new Error(`The Critic bridge exited during startup (${child.exitCode ?? child.signalCode}). ${await daemonLogTail()}`);
-    }
-    const owner = await daemonOwner();
-    lastHealth = owner?.health ?? null;
-    if (owner?.lease && lastHealth && isCompatibleDaemon(lastHealth) && (!requireOnline || lastHealth.state === "online")) {
-      return lastHealth;
-    }
-    await sleep(250);
-  }
-  if (lastHealth?.lastError) {
-    throw new Error(`The Critic bridge started but could not reach Critic: ${lastHealth.lastError}`);
-  }
-  throw new Error(`The Critic bridge did not start. ${await daemonLogTail()}`);
-}
-function isCompatibleDaemon(health) {
-  return health.protocolVersion === criticDaemonProtocolVersion && typeof health.runtimeVersion === "string" && isCriticVersion(health.runtimeVersion) && compareCriticVersions(health.runtimeVersion, criticPluginVersion) >= 0;
-}
-async function stopRunningDaemon(existing) {
-  const owner = existing ?? await daemonOwner();
-  await sendToDaemon({
-    method: "shutdown",
-    payload: owner?.lease ? {
-      runtimeInstanceId: owner.lease.runtimeInstanceId,
-      leaseNonce: owner.lease.leaseNonce
-    } : {}
-  }).catch(() => {
-    return;
-  });
-  for (let attempt = 0;attempt < 20; attempt += 1) {
-    await sleep(100);
-    if (!await daemonHealth().catch(() => null))
-      return;
-  }
-  await stopStaleDaemon(owner?.lease);
-}
-async function staleDaemonPid(expectedLease) {
-  const recorded = expectedLease?.pid ?? await readFile9(daemonPidPath, "utf8").then((value) => Number(value.trim())).catch(() => 0);
-  return Number.isInteger(recorded) && recorded > 1 ? recorded : socketOwnerPid(socketPath);
-}
-async function cleanupDeadDaemon(pid) {
-  const lease = await readDaemonLease(daemonLeasePath);
-  if (lease?.pid === pid) {
-    await unlink4(daemonLeasePath).catch(() => {
-      return;
-    });
-  }
-  await unlink4(daemonPidPath).catch(() => {
-    return;
-  });
-}
-async function terminationTarget(pid, expectedLease) {
-  const startIdentity = processStartIdentity(pid);
-  if (!startIdentity) {
-    await cleanupDeadDaemon(pid);
-    return null;
-  }
-  const command2 = processCommand(pid);
-  const currentLease = expectedLease ? await readDaemonLease(daemonLeasePath) : null;
-  const leaseMatches = !expectedLease || currentLease?.runtimeInstanceId === expectedLease.runtimeInstanceId && currentLease.leaseNonce === expectedLease.leaseNonce && currentLease.runtimeVersion === expectedLease.runtimeVersion && currentLease.pid === expectedLease.pid && currentLease.processStartIdentity === expectedLease.processStartIdentity;
-  const knownDaemonCommand = command2.includes(daemonRuntimePath) || /cli\/src\/index\.ts daemon$/.test(command2);
-  const verified = startIdentity === (expectedLease?.processStartIdentity ?? startIdentity) && socketOwnerPid(socketPath) === pid && leaseMatches && (expectedLease ? true : knownDaemonCommand);
-  if (!verified) {
-    throw new Error("Critic refused to stop an unverified local process");
-  }
-  return { pid, startIdentity };
-}
-async function waitForProcessExit(target) {
-  for (let attempt = 0;attempt < 20; attempt += 1) {
-    await sleep(100);
-    const identity = processStartIdentity(target.pid);
-    if (!identity) {
-      await cleanupDeadDaemon(target.pid);
-      return true;
-    }
-    if (identity !== target.startIdentity) {
-      throw new Error("Critic daemon PID was reused during shutdown");
-    }
-  }
-  return false;
-}
-function assertTerminationTarget(target) {
-  if (processStartIdentity(target.pid) !== target.startIdentity || socketOwnerPid(socketPath) !== target.pid) {
-    throw new Error("Critic daemon ownership changed during shutdown");
-  }
-}
-async function stopStaleDaemon(expectedLease) {
-  const pid = await staleDaemonPid(expectedLease);
-  if (!Number.isInteger(pid) || pid <= 1 || pid === process.pid)
-    return;
-  const target = await terminationTarget(pid, expectedLease);
-  if (!target)
-    return;
-  try {
-    process.kill(pid, "SIGTERM");
-  } catch {
-    await unlink4(daemonPidPath).catch(() => {
-      return;
-    });
-    return;
-  }
-  if (await waitForProcessExit(target))
-    return;
-  assertTerminationTarget(target);
-  try {
-    process.kill(pid, "SIGKILL");
-  } catch {}
-  await unlink4(daemonPidPath).catch(() => {
-    return;
-  });
-}
-async function daemonLogTail() {
-  const contents = await readFile9(daemonLogPath, "utf8").catch(() => "");
-  const tail = contents.slice(-4000).trim();
-  return tail ? `Recent log: ${tail}` : "No daemon log was written.";
+// packages/protocol/src/agent-conversation.ts
+function contentText(parts) {
+  return parts.map((part) => part.text).join("");
 }
 
 // node_modules/zod/v3/helpers/util.js
@@ -23953,10 +21776,10 @@ function isValidJWT(jwt, alg) {
   if (!jwtRegex.test(jwt))
     return false;
   try {
-    const [header] = jwt.split(".");
-    if (!header)
+    const [header2] = jwt.split(".");
+    if (!header2)
       return false;
-    const base64 = header.replace(/-/g, "+").replace(/_/g, "/").padEnd(header.length + (4 - header.length % 4) % 4, "=");
+    const base64 = header2.replace(/-/g, "+").replace(/_/g, "/").padEnd(header2.length + (4 - header2.length % 4) % 4, "=");
     const decoded = JSON.parse(atob(base64));
     if (typeof decoded !== "object" || decoded === null)
       return false;
@@ -26917,7 +24740,7 @@ __export(exports_core2, {
   process: () => process2,
   prettifyError: () => prettifyError,
   parseAsync: () => parseAsync,
-  parse: () => parse,
+  parse: () => parse2,
   meta: () => meta,
   locales: () => exports_locales,
   isValidJWT: () => isValidJWT2,
@@ -28101,7 +25924,7 @@ var _parse = (_Err) => (schema, value, _ctx, _params) => {
   }
   return result.value;
 };
-var parse = /* @__PURE__ */ _parse($ZodRealError);
+var parse2 = /* @__PURE__ */ _parse($ZodRealError);
 var _parseAsync = (_Err) => async (schema, value, _ctx, params) => {
   const ctx = _ctx ? { ..._ctx, async: true } : { async: true };
   let result = schema._zod.run({ value, issues: [] }, ctx);
@@ -28216,7 +26039,7 @@ __export(exports_regexes, {
   idnEmail: () => idnEmail,
   httpProtocol: () => httpProtocol,
   html5Email: () => html5Email,
-  hostname: () => hostname,
+  hostname: () => hostname2,
   hex: () => hex,
   guid: () => guid,
   extendedDuration: () => extendedDuration,
@@ -28266,15 +26089,15 @@ function emoji() {
 }
 var ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
 var ipv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))$/;
-var mac = (delimiter2) => {
-  const escapedDelim = escapeRegex(delimiter2 ?? ":");
+var mac = (delimiter) => {
+  const escapedDelim = escapeRegex(delimiter ?? ":");
   return new RegExp(`^(?:[0-9A-F]{2}${escapedDelim}){5}[0-9A-F]{2}$|^(?:[0-9a-f]{2}${escapedDelim}){5}[0-9a-f]{2}$`);
 };
 var cidrv4 = /^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/([0-9]|[1-2][0-9]|3[0-2])$/;
 var cidrv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::|([0-9a-fA-F]{1,4})?::([0-9a-fA-F]{1,4}:?){0,6})\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/;
 var base64 = /^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$/;
 var base64url = /^[A-Za-z0-9_-]*$/;
-var hostname = /^(?=.{1,253}\.?$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[-0-9a-zA-Z]{0,61}[0-9a-zA-Z])?)*\.?$/;
+var hostname2 = /^(?=.{1,253}\.?$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[-0-9a-zA-Z]{0,61}[0-9a-zA-Z])?)*\.?$/;
 var domain = /^([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 var httpProtocol = /^https?$/;
 var e164 = /^\+[1-9]\d{6,14}$/;
@@ -29318,10 +27141,10 @@ function isValidJWT2(token, algorithm = null) {
     const tokensParts = token.split(".");
     if (tokensParts.length !== 3)
       return false;
-    const [header] = tokensParts;
-    if (!header)
+    const [header2] = tokensParts;
+    if (!header2)
       return false;
-    const parsedHeader = JSON.parse(atob(header));
+    const parsedHeader = JSON.parse(atob(header2));
     if ("typ" in parsedHeader && parsedHeader?.typ !== "JWT")
       return false;
     if (!parsedHeader.alg)
@@ -30888,10 +28711,10 @@ var $ZodFunction = /* @__PURE__ */ $constructor("$ZodFunction", (inst, def) => {
       throw new Error("implement() must be called with a function");
     }
     return function(...args) {
-      const parsedArgs = inst._def.input ? parse(inst._def.input, args) : args;
+      const parsedArgs = inst._def.input ? parse2(inst._def.input, args) : args;
       const result = Reflect.apply(func, this, parsedArgs);
       if (inst._def.output) {
-        return parse(inst._def.output, result);
+        return parse2(inst._def.output, result);
       }
       return result;
     };
@@ -38838,7 +36661,7 @@ var ZodMiniType = /* @__PURE__ */ $constructor("ZodMiniType", (inst, def) => {
   $ZodType.init(inst, def);
   inst.def = def;
   inst.type = def.type;
-  inst.parse = (data, params) => parse(inst, data, params, { callee: inst.parse });
+  inst.parse = (data, params) => parse2(inst, data, params, { callee: inst.parse });
   inst.safeParse = (data, params) => safeParse(inst, data, params);
   inst.parseAsync = async (data, params) => parseAsync(inst, data, params, { callee: inst.parseAsync });
   inst.safeParseAsync = async (data, params) => safeParseAsync(inst, data, params);
@@ -39079,7 +36902,7 @@ __export(exports_external, {
   pipe: () => pipe,
   partialRecord: () => partialRecord,
   parseAsync: () => parseAsync2,
-  parse: () => parse4,
+  parse: () => parse5,
   overwrite: () => _overwrite,
   optional: () => optional,
   object: () => object2,
@@ -39129,7 +36952,7 @@ __export(exports_external, {
   instanceof: () => _instanceof,
   includes: () => _includes,
   httpUrl: () => httpUrl,
-  hostname: () => hostname2,
+  hostname: () => hostname3,
   hex: () => hex2,
   hash: () => hash,
   guid: () => guid2,
@@ -39329,7 +37152,7 @@ __export(exports_schemas2, {
   int: () => int,
   instanceof: () => _instanceof,
   httpUrl: () => httpUrl,
-  hostname: () => hostname2,
+  hostname: () => hostname3,
   hex: () => hex2,
   hash: () => hash,
   guid: () => guid2,
@@ -39544,7 +37367,7 @@ var ZodRealError = /* @__PURE__ */ $constructor("ZodError", initializer2, {
 });
 
 // node_modules/zod/v4/classic/parse.js
-var parse4 = /* @__PURE__ */ _parse(ZodRealError);
+var parse5 = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync2 = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse3 = /* @__PURE__ */ _safeParse(ZodRealError);
 var safeParseAsync3 = /* @__PURE__ */ _safeParseAsync(ZodRealError);
@@ -39607,7 +37430,7 @@ var ZodType2 = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
   inst.def = def;
   inst.type = def.type;
   Object.defineProperty(inst, "_def", { value: def });
-  inst.parse = (data, params) => parse4(inst, data, params, { callee: inst.parse });
+  inst.parse = (data, params) => parse5(inst, data, params, { callee: inst.parse });
   inst.safeParse = (data, params) => safeParse3(inst, data, params);
   inst.parseAsync = async (data, params) => parseAsync2(inst, data, params, { callee: inst.parseAsync });
   inst.safeParseAsync = async (data, params) => safeParseAsync3(inst, data, params);
@@ -39981,7 +37804,7 @@ var ZodCustomStringFormat = /* @__PURE__ */ $constructor("ZodCustomStringFormat"
 function stringFormat(format, fnOrRegex, _params = {}) {
   return _stringFormat(ZodCustomStringFormat, format, fnOrRegex, _params);
 }
-function hostname2(_params) {
+function hostname3(_params) {
   return _stringFormat(ZodCustomStringFormat, "hostname", exports_regexes.hostname, _params);
 }
 function hex2(_params) {
@@ -42073,14 +39896,14 @@ var CompleteRequestSchema = RequestSchema.extend({
   method: literal("completion/complete"),
   params: CompleteRequestParamsSchema
 });
-function assertCompleteRequestPrompt(request) {
-  if (request.params.ref.type !== "ref/prompt") {
-    throw new TypeError(`Expected CompleteRequestPrompt, but got ${request.params.ref.type}`);
+function assertCompleteRequestPrompt(request2) {
+  if (request2.params.ref.type !== "ref/prompt") {
+    throw new TypeError(`Expected CompleteRequestPrompt, but got ${request2.params.ref.type}`);
   }
 }
-function assertCompleteRequestResourceTemplate(request) {
-  if (request.params.ref.type !== "ref/resource") {
-    throw new TypeError(`Expected CompleteRequestResourceTemplate, but got ${request.params.ref.type}`);
+function assertCompleteRequestResourceTemplate(request2) {
+  if (request2.params.ref.type !== "ref/resource") {
+    throw new TypeError(`Expected CompleteRequestResourceTemplate, but got ${request2.params.ref.type}`);
   }
 }
 var CompleteResultSchema = ResultSchema.extend({
@@ -43517,8 +41340,8 @@ class Protocol {
     this._taskStore = _options?.taskStore;
     this._taskMessageQueue = _options?.taskMessageQueue;
     if (this._taskStore) {
-      this.setRequestHandler(GetTaskRequestSchema, async (request, extra) => {
-        const task = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+      this.setRequestHandler(GetTaskRequestSchema, async (request2, extra) => {
+        const task = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
         if (!task) {
           throw new McpError(ErrorCode.InvalidParams, "Failed to retrieve task: Task not found");
         }
@@ -43526,9 +41349,9 @@ class Protocol {
           ...task
         };
       });
-      this.setRequestHandler(GetTaskPayloadRequestSchema, async (request, extra) => {
+      this.setRequestHandler(GetTaskPayloadRequestSchema, async (request2, extra) => {
         const handleTaskResult = async () => {
-          const taskId = request.params.taskId;
+          const taskId = request2.params.taskId;
           if (this._taskMessageQueue) {
             let queuedMessage;
             while (queuedMessage = await this._taskMessageQueue.dequeue(taskId, extra.sessionId)) {
@@ -43579,9 +41402,9 @@ class Protocol {
         };
         return await handleTaskResult();
       });
-      this.setRequestHandler(ListTasksRequestSchema, async (request, extra) => {
+      this.setRequestHandler(ListTasksRequestSchema, async (request2, extra) => {
         try {
-          const { tasks, nextCursor } = await this._taskStore.listTasks(request.params?.cursor, extra.sessionId);
+          const { tasks, nextCursor } = await this._taskStore.listTasks(request2.params?.cursor, extra.sessionId);
           return {
             tasks,
             nextCursor,
@@ -43591,20 +41414,20 @@ class Protocol {
           throw new McpError(ErrorCode.InvalidParams, `Failed to list tasks: ${error51 instanceof Error ? error51.message : String(error51)}`);
         }
       });
-      this.setRequestHandler(CancelTaskRequestSchema, async (request, extra) => {
+      this.setRequestHandler(CancelTaskRequestSchema, async (request2, extra) => {
         try {
-          const task = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+          const task = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
           if (!task) {
-            throw new McpError(ErrorCode.InvalidParams, `Task not found: ${request.params.taskId}`);
+            throw new McpError(ErrorCode.InvalidParams, `Task not found: ${request2.params.taskId}`);
           }
           if (isTerminal(task.status)) {
             throw new McpError(ErrorCode.InvalidParams, `Cannot cancel task in terminal status: ${task.status}`);
           }
-          await this._taskStore.updateTaskStatus(request.params.taskId, "cancelled", "Client cancelled task execution.", extra.sessionId);
-          this._clearTaskQueue(request.params.taskId);
-          const cancelledTask = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+          await this._taskStore.updateTaskStatus(request2.params.taskId, "cancelled", "Client cancelled task execution.", extra.sessionId);
+          this._clearTaskQueue(request2.params.taskId);
+          const cancelledTask = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
           if (!cancelledTask) {
-            throw new McpError(ErrorCode.InvalidParams, `Task not found after cancellation: ${request.params.taskId}`);
+            throw new McpError(ErrorCode.InvalidParams, `Task not found after cancellation: ${request2.params.taskId}`);
           }
           return {
             _meta: {},
@@ -43720,14 +41543,14 @@ class Protocol {
     }
     Promise.resolve().then(() => handler(notification)).catch((error51) => this._onerror(new Error(`Uncaught error in notification handler: ${error51}`)));
   }
-  _onrequest(request, extra) {
-    const handler = this._requestHandlers.get(request.method) ?? this.fallbackRequestHandler;
+  _onrequest(request2, extra) {
+    const handler = this._requestHandlers.get(request2.method) ?? this.fallbackRequestHandler;
     const capturedTransport = this._transport;
-    const relatedTaskId = request.params?._meta?.[RELATED_TASK_META_KEY]?.taskId;
+    const relatedTaskId = request2.params?._meta?.[RELATED_TASK_META_KEY]?.taskId;
     if (handler === undefined) {
       const errorResponse = {
         jsonrpc: "2.0",
-        id: request.id,
+        id: request2.id,
         error: {
           code: ErrorCode.MethodNotFound,
           message: "Method not found"
@@ -43745,17 +41568,17 @@ class Protocol {
       return;
     }
     const abortController = new AbortController;
-    this._requestHandlerAbortControllers.set(request.id, abortController);
-    const taskCreationParams = isTaskAugmentedRequestParams(request.params) ? request.params.task : undefined;
-    const taskStore = this._taskStore ? this.requestTaskStore(request, capturedTransport?.sessionId) : undefined;
+    this._requestHandlerAbortControllers.set(request2.id, abortController);
+    const taskCreationParams = isTaskAugmentedRequestParams(request2.params) ? request2.params.task : undefined;
+    const taskStore = this._taskStore ? this.requestTaskStore(request2, capturedTransport?.sessionId) : undefined;
     const fullExtra = {
       signal: abortController.signal,
       sessionId: capturedTransport?.sessionId,
-      _meta: request.params?._meta,
+      _meta: request2.params?._meta,
       sendNotification: async (notification) => {
         if (abortController.signal.aborted)
           return;
-        const notificationOptions = { relatedRequestId: request.id };
+        const notificationOptions = { relatedRequestId: request2.id };
         if (relatedTaskId) {
           notificationOptions.relatedTask = { taskId: relatedTaskId };
         }
@@ -43765,7 +41588,7 @@ class Protocol {
         if (abortController.signal.aborted) {
           throw new McpError(ErrorCode.ConnectionClosed, "Request was cancelled");
         }
-        const requestOptions = { ...options, relatedRequestId: request.id };
+        const requestOptions = { ...options, relatedRequestId: request2.id };
         if (relatedTaskId && !requestOptions.relatedTask) {
           requestOptions.relatedTask = { taskId: relatedTaskId };
         }
@@ -43776,7 +41599,7 @@ class Protocol {
         return await this.request(r, resultSchema, requestOptions);
       },
       authInfo: extra?.authInfo,
-      requestId: request.id,
+      requestId: request2.id,
       requestInfo: extra?.requestInfo,
       taskId: relatedTaskId,
       taskStore,
@@ -43786,16 +41609,16 @@ class Protocol {
     };
     Promise.resolve().then(() => {
       if (taskCreationParams) {
-        this.assertTaskHandlerCapability(request.method);
+        this.assertTaskHandlerCapability(request2.method);
       }
-    }).then(() => handler(request, fullExtra)).then(async (result) => {
+    }).then(() => handler(request2, fullExtra)).then(async (result) => {
       if (abortController.signal.aborted) {
         return;
       }
       const response = {
         result,
         jsonrpc: "2.0",
-        id: request.id
+        id: request2.id
       };
       if (relatedTaskId && this._taskMessageQueue) {
         await this._enqueueTaskMessage(relatedTaskId, {
@@ -43812,7 +41635,7 @@ class Protocol {
       }
       const errorResponse = {
         jsonrpc: "2.0",
-        id: request.id,
+        id: request2.id,
         error: {
           code: Number.isSafeInteger(error51["code"]) ? error51["code"] : ErrorCode.InternalError,
           message: error51.message ?? "Internal error",
@@ -43829,8 +41652,8 @@ class Protocol {
         await capturedTransport?.send(errorResponse);
       }
     }).catch((error51) => this._onerror(new Error(`Failed to send response: ${error51}`))).finally(() => {
-      if (this._requestHandlerAbortControllers.get(request.id) === abortController) {
-        this._requestHandlerAbortControllers.delete(request.id);
+      if (this._requestHandlerAbortControllers.get(request2.id) === abortController) {
+        this._requestHandlerAbortControllers.delete(request2.id);
       }
     });
   }
@@ -43904,11 +41727,11 @@ class Protocol {
   async close() {
     await this._transport?.close();
   }
-  async* requestStream(request, resultSchema, options) {
+  async* requestStream(request2, resultSchema, options) {
     const { task } = options ?? {};
     if (!task) {
       try {
-        const result = await this.request(request, resultSchema, options);
+        const result = await this.request(request2, resultSchema, options);
         yield { type: "result", result };
       } catch (error51) {
         yield {
@@ -43920,7 +41743,7 @@ class Protocol {
     }
     let taskId;
     try {
-      const createResult = await this.request(request, CreateTaskResultSchema, options);
+      const createResult = await this.request(request2, CreateTaskResultSchema, options);
       if (createResult.task) {
         taskId = createResult.task.taskId;
         yield { type: "taskCreated", task: createResult.task };
@@ -43953,7 +41776,7 @@ class Protocol {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1000;
-        await new Promise((resolve6) => setTimeout(resolve6, pollInterval));
+        await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error51) {
@@ -43963,9 +41786,9 @@ class Protocol {
       };
     }
   }
-  request(request, resultSchema, options) {
+  request(request2, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve5, reject) => {
       const earlyReject = (error51) => {
         reject(error51);
       };
@@ -43975,9 +41798,9 @@ class Protocol {
       }
       if (this._options?.enforceStrictCapabilities === true) {
         try {
-          this.assertCapabilityForMethod(request.method);
+          this.assertCapabilityForMethod(request2.method);
           if (task) {
-            this.assertTaskCapability(request.method);
+            this.assertTaskCapability(request2.method);
           }
         } catch (e) {
           earlyReject(e);
@@ -43987,16 +41810,16 @@ class Protocol {
       options?.signal?.throwIfAborted();
       const messageId = this._requestMessageId++;
       const jsonrpcRequest = {
-        ...request,
+        ...request2,
         jsonrpc: "2.0",
         id: messageId
       };
       if (options?.onprogress) {
         this._progressHandlers.set(messageId, options.onprogress);
         jsonrpcRequest.params = {
-          ...request.params,
+          ...request2.params,
           _meta: {
-            ...request.params?._meta || {},
+            ...request2.params?._meta || {},
             progressToken: messageId
           }
         };
@@ -44043,7 +41866,7 @@ class Protocol {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve6(parseResult.data);
+            resolve5(parseResult.data);
           }
         } catch (error51) {
           reject(error51);
@@ -44172,8 +41995,8 @@ class Protocol {
   setRequestHandler(requestSchema, handler) {
     const method = getMethodLiteral(requestSchema);
     this.assertRequestHandlerCapability(method);
-    this._requestHandlers.set(method, (request, extra) => {
-      const parsed = parseWithCompat(requestSchema, request);
+    this._requestHandlers.set(method, (request2, extra) => {
+      const parsed = parseWithCompat(requestSchema, request2);
       return Promise.resolve(handler(parsed, extra));
     });
   }
@@ -44202,16 +42025,16 @@ class Protocol {
       this._taskProgressTokens.delete(taskId);
     }
   }
-  async _enqueueTaskMessage(taskId, message, sessionId) {
+  async _enqueueTaskMessage(taskId, message, sessionId2) {
     if (!this._taskStore || !this._taskMessageQueue) {
       throw new Error("Cannot enqueue task message: taskStore and taskMessageQueue are not configured");
     }
     const maxQueueSize = this._options?.maxTaskQueueSize;
-    await this._taskMessageQueue.enqueue(taskId, message, sessionId, maxQueueSize);
+    await this._taskMessageQueue.enqueue(taskId, message, sessionId2, maxQueueSize);
   }
-  async _clearTaskQueue(taskId, sessionId) {
+  async _clearTaskQueue(taskId, sessionId2) {
     if (this._taskMessageQueue) {
-      const messages = await this._taskMessageQueue.dequeueAll(taskId, sessionId);
+      const messages = await this._taskMessageQueue.dequeueAll(taskId, sessionId2);
       for (const message of messages) {
         if (message.type === "request" && isJSONRPCRequest(message.message)) {
           const requestId = message.message.id;
@@ -44234,43 +42057,43 @@ class Protocol {
         interval = task.pollInterval;
       }
     } catch {}
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve5, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve6, interval);
+      const timeoutId = setTimeout(resolve5, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
       }, { once: true });
     });
   }
-  requestTaskStore(request, sessionId) {
+  requestTaskStore(request2, sessionId2) {
     const taskStore = this._taskStore;
     if (!taskStore) {
       throw new Error("No task store configured");
     }
     return {
       createTask: async (taskParams) => {
-        if (!request) {
+        if (!request2) {
           throw new Error("No request provided");
         }
-        return await taskStore.createTask(taskParams, request.id, {
-          method: request.method,
-          params: request.params
-        }, sessionId);
+        return await taskStore.createTask(taskParams, request2.id, {
+          method: request2.method,
+          params: request2.params
+        }, sessionId2);
       },
       getTask: async (taskId) => {
-        const task = await taskStore.getTask(taskId, sessionId);
+        const task = await taskStore.getTask(taskId, sessionId2);
         if (!task) {
           throw new McpError(ErrorCode.InvalidParams, "Failed to retrieve task: Task not found");
         }
         return task;
       },
       storeTaskResult: async (taskId, status, result) => {
-        await taskStore.storeTaskResult(taskId, status, result, sessionId);
-        const task = await taskStore.getTask(taskId, sessionId);
+        await taskStore.storeTaskResult(taskId, status, result, sessionId2);
+        const task = await taskStore.getTask(taskId, sessionId2);
         if (task) {
           const notification = TaskStatusNotificationSchema.parse({
             method: "notifications/tasks/status",
@@ -44283,18 +42106,18 @@ class Protocol {
         }
       },
       getTaskResult: (taskId) => {
-        return taskStore.getTaskResult(taskId, sessionId);
+        return taskStore.getTaskResult(taskId, sessionId2);
       },
       updateTaskStatus: async (taskId, status, statusMessage) => {
-        const task = await taskStore.getTask(taskId, sessionId);
+        const task = await taskStore.getTask(taskId, sessionId2);
         if (!task) {
           throw new McpError(ErrorCode.InvalidParams, `Task "${taskId}" not found - it may have been cleaned up`);
         }
         if (isTerminal(task.status)) {
           throw new McpError(ErrorCode.InvalidParams, `Cannot update task "${taskId}" from terminal status "${task.status}" to "${status}". Terminal states (completed, failed, cancelled) cannot transition to other states.`);
         }
-        await taskStore.updateTaskStatus(taskId, status, statusMessage, sessionId);
-        const updatedTask = await taskStore.getTask(taskId, sessionId);
+        await taskStore.updateTaskStatus(taskId, status, statusMessage, sessionId2);
+        const updatedTask = await taskStore.getTask(taskId, sessionId2);
         if (updatedTask) {
           const notification = TaskStatusNotificationSchema.parse({
             method: "notifications/tasks/status",
@@ -44307,7 +42130,7 @@ class Protocol {
         }
       },
       listTasks: (cursor) => {
-        return taskStore.listTasks(cursor, sessionId);
+        return taskStore.listTasks(cursor, sessionId2);
       }
     };
   }
@@ -44377,8 +42200,8 @@ class ExperimentalServerTasks {
   constructor(_server) {
     this._server = _server;
   }
-  requestStream(request, resultSchema, options) {
-    return this._server.requestStream(request, resultSchema, options);
+  requestStream(request2, resultSchema, options) {
+    return this._server.requestStream(request2, resultSchema, options);
   }
   createMessageStream(params, options) {
     const clientCapabilities = this._server.getClientCapabilities();
@@ -44492,19 +42315,19 @@ class Server extends Protocol {
     this._serverInfo = _serverInfo;
     this._loggingLevels = new Map;
     this.LOG_LEVEL_SEVERITY = new Map(LoggingLevelSchema.options.map((level, index) => [level, index]));
-    this.isMessageIgnored = (level, sessionId) => {
-      const currentLevel = this._loggingLevels.get(sessionId);
+    this.isMessageIgnored = (level, sessionId2) => {
+      const currentLevel = this._loggingLevels.get(sessionId2);
       return currentLevel ? this.LOG_LEVEL_SEVERITY.get(level) < this.LOG_LEVEL_SEVERITY.get(currentLevel) : false;
     };
     this._capabilities = options?.capabilities ?? {};
     this._instructions = options?.instructions;
     this._jsonSchemaValidator = options?.jsonSchemaValidator ?? new AjvJsonSchemaValidator;
-    this.setRequestHandler(InitializeRequestSchema, (request) => this._oninitialize(request));
+    this.setRequestHandler(InitializeRequestSchema, (request2) => this._oninitialize(request2));
     this.setNotificationHandler(InitializedNotificationSchema, () => this.oninitialized?.());
     if (this._capabilities.logging) {
-      this.setRequestHandler(SetLevelRequestSchema, async (request, extra) => {
+      this.setRequestHandler(SetLevelRequestSchema, async (request2, extra) => {
         const transportSessionId = extra.sessionId || extra.requestInfo?.headers["mcp-session-id"] || undefined;
-        const { level } = request.params;
+        const { level } = request2.params;
         const parseResult = LoggingLevelSchema.safeParse(level);
         if (parseResult.success) {
           this._loggingLevels.set(transportSessionId, parseResult.data);
@@ -44548,14 +42371,14 @@ class Server extends Protocol {
     }
     const method = methodValue;
     if (method === "tools/call") {
-      const wrappedHandler = async (request, extra) => {
-        const validatedRequest = safeParse2(CallToolRequestSchema, request);
+      const wrappedHandler = async (request2, extra) => {
+        const validatedRequest = safeParse2(CallToolRequestSchema, request2);
         if (!validatedRequest.success) {
           const errorMessage = validatedRequest.error instanceof Error ? validatedRequest.error.message : String(validatedRequest.error);
           throw new McpError(ErrorCode.InvalidParams, `Invalid tools/call request: ${errorMessage}`);
         }
         const { params } = validatedRequest.data;
-        const result = await Promise.resolve(handler(request, extra));
+        const result = await Promise.resolve(handler(request2, extra));
         if (params.task) {
           const taskValidationResult = safeParse2(CreateTaskResultSchema, result);
           if (!taskValidationResult.success) {
@@ -44686,10 +42509,10 @@ class Server extends Protocol {
     }
     assertToolsCallTaskCapability(this._capabilities.tasks?.requests, method, "Server");
   }
-  async _oninitialize(request) {
-    const requestedVersion = request.params.protocolVersion;
-    this._clientCapabilities = request.params.capabilities;
-    this._clientVersion = request.params.clientInfo;
+  async _oninitialize(request2) {
+    const requestedVersion = request2.params.protocolVersion;
+    this._clientCapabilities = request2.params.capabilities;
+    this._clientVersion = request2.params.clientInfo;
     const protocolVersion = SUPPORTED_PROTOCOL_VERSIONS.includes(requestedVersion) ? requestedVersion : LATEST_PROTOCOL_VERSION;
     return {
       protocolVersion,
@@ -44792,9 +42615,9 @@ class Server extends Protocol {
   async listRoots(params, options) {
     return this.request({ method: "roots/list", params }, ListRootsResultSchema, options);
   }
-  async sendLoggingMessage(params, sessionId) {
+  async sendLoggingMessage(params, sessionId2) {
     if (this._capabilities.logging) {
-      if (!this.isMessageIgnored(params.level, sessionId)) {
+      if (!this.isMessageIgnored(params.level, sessionId2)) {
         return this.notification({ method: "notifications/message", params });
       }
     }
@@ -44971,33 +42794,33 @@ class McpServer {
         return toolDefinition;
       })
     }));
-    this.server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request2, extra) => {
       try {
-        const tool = this._registeredTools[request.params.name];
+        const tool = this._registeredTools[request2.params.name];
         if (!tool) {
-          throw new McpError(ErrorCode.InvalidParams, `Tool ${request.params.name} not found`);
+          throw new McpError(ErrorCode.InvalidParams, `Tool ${request2.params.name} not found`);
         }
         if (!tool.enabled) {
-          throw new McpError(ErrorCode.InvalidParams, `Tool ${request.params.name} disabled`);
+          throw new McpError(ErrorCode.InvalidParams, `Tool ${request2.params.name} disabled`);
         }
-        const isTaskRequest = !!request.params.task;
+        const isTaskRequest = !!request2.params.task;
         const taskSupport = tool.execution?.taskSupport;
         const isTaskHandler = "createTask" in tool.handler;
         if ((taskSupport === "required" || taskSupport === "optional") && !isTaskHandler) {
-          throw new McpError(ErrorCode.InternalError, `Tool ${request.params.name} has taskSupport '${taskSupport}' but was not registered with registerToolTask`);
+          throw new McpError(ErrorCode.InternalError, `Tool ${request2.params.name} has taskSupport '${taskSupport}' but was not registered with registerToolTask`);
         }
         if (taskSupport === "required" && !isTaskRequest) {
-          throw new McpError(ErrorCode.MethodNotFound, `Tool ${request.params.name} requires task augmentation (taskSupport: 'required')`);
+          throw new McpError(ErrorCode.MethodNotFound, `Tool ${request2.params.name} requires task augmentation (taskSupport: 'required')`);
         }
         if (taskSupport === "optional" && !isTaskRequest && isTaskHandler) {
-          return await this.handleAutomaticTaskPolling(tool, request, extra);
+          return await this.handleAutomaticTaskPolling(tool, request2, extra);
         }
-        const args = await this.validateToolInput(tool, request.params.arguments, request.params.name);
+        const args = await this.validateToolInput(tool, request2.params.arguments, request2.params.name);
         const result = await this.executeToolHandler(tool, args, extra);
         if (isTaskRequest) {
           return result;
         }
-        await this.validateToolOutput(tool, result, request.params.name);
+        await this.validateToolOutput(tool, result, request2.params.name);
         return result;
       } catch (error51) {
         if (error51 instanceof McpError) {
@@ -45080,11 +42903,11 @@ class McpServer {
       return await Promise.resolve(typedHandler(extra));
     }
   }
-  async handleAutomaticTaskPolling(tool, request, extra) {
+  async handleAutomaticTaskPolling(tool, request2, extra) {
     if (!extra.taskStore) {
       throw new Error("No task store provided for task-capable tool.");
     }
-    const args = await this.validateToolInput(tool, request.params.arguments, request.params.name);
+    const args = await this.validateToolInput(tool, request2.params.arguments, request2.params.name);
     const handler = tool.handler;
     const taskExtra = { ...extra, taskStore: extra.taskStore };
     const createTaskResult = args ? await Promise.resolve(handler.createTask(args, taskExtra)) : await Promise.resolve(handler.createTask(taskExtra));
@@ -45092,7 +42915,7 @@ class McpServer {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5000;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve6) => setTimeout(resolve6, pollInterval));
+      await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -45109,21 +42932,21 @@ class McpServer {
     this.server.registerCapabilities({
       completions: {}
     });
-    this.server.setRequestHandler(CompleteRequestSchema, async (request) => {
-      switch (request.params.ref.type) {
+    this.server.setRequestHandler(CompleteRequestSchema, async (request2) => {
+      switch (request2.params.ref.type) {
         case "ref/prompt":
-          assertCompleteRequestPrompt(request);
-          return this.handlePromptCompletion(request, request.params.ref);
+          assertCompleteRequestPrompt(request2);
+          return this.handlePromptCompletion(request2, request2.params.ref);
         case "ref/resource":
-          assertCompleteRequestResourceTemplate(request);
-          return this.handleResourceCompletion(request, request.params.ref);
+          assertCompleteRequestResourceTemplate(request2);
+          return this.handleResourceCompletion(request2, request2.params.ref);
         default:
-          throw new McpError(ErrorCode.InvalidParams, `Invalid completion reference: ${request.params.ref}`);
+          throw new McpError(ErrorCode.InvalidParams, `Invalid completion reference: ${request2.params.ref}`);
       }
     });
     this._completionHandlerInitialized = true;
   }
-  async handlePromptCompletion(request, ref) {
+  async handlePromptCompletion(request2, ref) {
     const prompt = this._registeredPrompts[ref.name];
     if (!prompt) {
       throw new McpError(ErrorCode.InvalidParams, `Prompt ${ref.name} not found`);
@@ -45135,7 +42958,7 @@ class McpServer {
       return EMPTY_COMPLETION_RESULT;
     }
     const promptShape = getObjectShape(prompt.argsSchema);
-    const field = promptShape?.[request.params.argument.name];
+    const field = promptShape?.[request2.params.argument.name];
     if (!isCompletable(field)) {
       return EMPTY_COMPLETION_RESULT;
     }
@@ -45143,22 +42966,22 @@ class McpServer {
     if (!completer) {
       return EMPTY_COMPLETION_RESULT;
     }
-    const suggestions = await completer(request.params.argument.value, request.params.context);
+    const suggestions = await completer(request2.params.argument.value, request2.params.context);
     return createCompletionResult(suggestions);
   }
-  async handleResourceCompletion(request, ref) {
+  async handleResourceCompletion(request2, ref) {
     const template = Object.values(this._registeredResourceTemplates).find((t) => t.resourceTemplate.uriTemplate.toString() === ref.uri);
     if (!template) {
       if (this._registeredResources[ref.uri]) {
         return EMPTY_COMPLETION_RESULT;
       }
-      throw new McpError(ErrorCode.InvalidParams, `Resource template ${request.params.ref.uri} not found`);
+      throw new McpError(ErrorCode.InvalidParams, `Resource template ${request2.params.ref.uri} not found`);
     }
-    const completer = template.resourceTemplate.completeCallback(request.params.argument.name);
+    const completer = template.resourceTemplate.completeCallback(request2.params.argument.name);
     if (!completer) {
       return EMPTY_COMPLETION_RESULT;
     }
-    const suggestions = await completer(request.params.argument.value, request.params.context);
+    const suggestions = await completer(request2.params.argument.value, request2.params.context);
     return createCompletionResult(suggestions);
   }
   setResourceRequestHandlers() {
@@ -45173,7 +42996,7 @@ class McpServer {
         listChanged: true
       }
     });
-    this.server.setRequestHandler(ListResourcesRequestSchema, async (request, extra) => {
+    this.server.setRequestHandler(ListResourcesRequestSchema, async (request2, extra) => {
       const resources = Object.entries(this._registeredResources).filter(([_, resource]) => resource.enabled).map(([uri, resource]) => ({
         uri,
         name: resource.name,
@@ -45202,8 +43025,8 @@ class McpServer {
       }));
       return { resourceTemplates };
     });
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request, extra) => {
-      const uri = new URL(request.params.uri);
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request2, extra) => {
+      const uri = new URL(request2.params.uri);
       const resource = this._registeredResources[uri.toString()];
       if (resource) {
         if (!resource.enabled) {
@@ -45242,21 +43065,21 @@ class McpServer {
         };
       })
     }));
-    this.server.setRequestHandler(GetPromptRequestSchema, async (request, extra) => {
-      const prompt = this._registeredPrompts[request.params.name];
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request2, extra) => {
+      const prompt = this._registeredPrompts[request2.params.name];
       if (!prompt) {
-        throw new McpError(ErrorCode.InvalidParams, `Prompt ${request.params.name} not found`);
+        throw new McpError(ErrorCode.InvalidParams, `Prompt ${request2.params.name} not found`);
       }
       if (!prompt.enabled) {
-        throw new McpError(ErrorCode.InvalidParams, `Prompt ${request.params.name} disabled`);
+        throw new McpError(ErrorCode.InvalidParams, `Prompt ${request2.params.name} disabled`);
       }
       if (prompt.argsSchema) {
         const argsObj = normalizeObjectSchema(prompt.argsSchema);
-        const parseResult = await safeParseAsync2(argsObj, request.params.arguments);
+        const parseResult = await safeParseAsync2(argsObj, request2.params.arguments);
         if (!parseResult.success) {
           const error51 = "error" in parseResult ? parseResult.error : "Unknown error";
           const errorMessage = getParseErrorMessage(error51);
-          throw new McpError(ErrorCode.InvalidParams, `Invalid arguments for prompt ${request.params.name}: ${errorMessage}`);
+          throw new McpError(ErrorCode.InvalidParams, `Invalid arguments for prompt ${request2.params.name}: ${errorMessage}`);
         }
         const args = parseResult.data;
         const cb = prompt.callback;
@@ -45535,8 +43358,8 @@ class McpServer {
   isConnected() {
     return this.server.transport !== undefined;
   }
-  async sendLoggingMessage(params, sessionId) {
-    return this.server.sendLoggingMessage(params, sessionId);
+  async sendLoggingMessage(params, sessionId2) {
+    return this.server.sendLoggingMessage(params, sessionId2);
   }
   sendResourceListChanged() {
     if (this.isConnected()) {
@@ -45710,23 +43533,23 @@ class StdioServerTransport {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve6) => {
+    return new Promise((resolve5) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve6();
+        resolve5();
       } else {
-        this._stdout.once("drain", resolve6);
+        this._stdout.once("drain", resolve5);
       }
     });
   }
 }
 
-// cli/src/repository-tools.ts
-import { createReadStream as createReadStream2, realpathSync as realpathSync2 } from "node:fs";
-import { spawnSync as spawnSync4 } from "node:child_process";
-import { createHash as createHash6 } from "node:crypto";
-import { readFile as readFile10, stat as stat4 } from "node:fs/promises";
-import { isAbsolute as isAbsolute3, relative as relative3, resolve as resolve6, sep } from "node:path";
+// runtime/src/repository-tools.ts
+import { createReadStream, realpathSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { createHash as createHash7 } from "node:crypto";
+import { readFile as readFile5, stat as stat4 } from "node:fs/promises";
+import { isAbsolute as isAbsolute3, relative as relative4, resolve as resolve5, sep } from "node:path";
 var MAX_OUTPUT_BYTES = 200000;
 var DEFAULT_RESULT_LIMIT = 100;
 var MAX_RESULT_LIMIT = 500;
@@ -45737,29 +43560,13 @@ var SAFE_GIT_CONFIG = [
   "-c",
   "core.hooksPath=/dev/null"
 ];
-function safeGitEnvironment() {
-  const environment = { ...process.env };
-  for (const key of Object.keys(environment)) {
-    if (key === "GIT_DIR" || key === "GIT_COMMON_DIR" || key === "GIT_WORK_TREE" || key === "GIT_INDEX_FILE" || key === "GIT_OBJECT_DIRECTORY" || key === "GIT_ALTERNATE_OBJECT_DIRECTORIES" || key === "GIT_CONFIG_COUNT" || key === "GIT_CONFIG_PARAMETERS" || key === "GIT_SHALLOW_FILE" || /^GIT_CONFIG_(?:KEY|VALUE)_\d+$/.test(key)) {
-      delete environment[key];
-    }
-  }
-  return {
-    ...environment,
-    GIT_CONFIG_NOSYSTEM: "1",
-    GIT_NO_REPLACE_OBJECTS: "1",
-    GIT_OPTIONAL_LOCKS: "0",
-    GIT_PAGER: "cat",
-    GIT_TERMINAL_PROMPT: "0"
-  };
-}
 function assertRepositoryAvailable(context) {
   if (context.unavailableReason) {
     throw new Error(`Repository tools are unavailable: ${context.unavailableReason}`);
   }
 }
 function checkedGit(context, args) {
-  const result = spawnSync4("git", [...SAFE_GIT_CONFIG, "--literal-pathspecs", ...args], {
+  const result = spawnSync("git", [...SAFE_GIT_CONFIG, "--literal-pathspecs", ...args], {
     cwd: context.root,
     env: safeGitEnvironment(),
     encoding: "utf8"
@@ -45770,7 +43577,7 @@ function checkedGit(context, args) {
   return result.stdout;
 }
 function checkedGitBytes(context, args) {
-  const result = spawnSync4("git", [...SAFE_GIT_CONFIG, "--literal-pathspecs", ...args], {
+  const result = spawnSync("git", [...SAFE_GIT_CONFIG, "--literal-pathspecs", ...args], {
     cwd: context.root,
     env: safeGitEnvironment(),
     encoding: "buffer",
@@ -45824,7 +43631,7 @@ function safeTextResult(value, source, limit = MAX_OUTPUT_BYTES) {
   return { ...bounded(value, limit), source };
 }
 function containedPath(root, target) {
-  const fromRoot = relative3(root, target);
+  const fromRoot = relative4(root, target);
   if (fromRoot === ".." || fromRoot.startsWith(`..${sep}`) || isAbsolute3(fromRoot)) {
     throw new Error("Repository paths must stay inside the connected repository");
   }
@@ -45839,11 +43646,11 @@ function normalizedPath(context, value) {
     throw new Error("Repository paths must stay inside the connected repository");
   }
   const path = isAbsolute3(value) ? (() => {
-    const root = realpathSync2(context.root);
-    containedPath(resolve6(context.root), resolve6(value));
+    const root = realpathSync(context.root);
+    containedPath(resolve5(context.root), resolve5(value));
     let target;
     try {
-      target = realpathSync2(value);
+      target = realpathSync(value);
     } catch {
       throw new Error("Absolute repository paths must resolve to an existing file or directory");
     }
@@ -45909,27 +43716,27 @@ function assertReachableCommit(context, sha) {
   }
 }
 async function assertVisible(context, path) {
-  const patterns = await repositoryExcludedPatterns(context.root);
-  const ignored = spawnSync4("git", [...SAFE_GIT_CONFIG, "check-ignore", "-q", "--", `./${path}`], {
+  const patterns = await excludedPatterns(context.root);
+  const ignored = spawnSync("git", [...SAFE_GIT_CONFIG, "check-ignore", "-q", "--", `./${path}`], {
     cwd: context.root,
     env: safeGitEnvironment()
   });
   if (ignored.status !== 0 && ignored.status !== 1) {
     throw new Error("Could not verify repository ignore rules");
   }
-  if (ignored.status === 0 || repositoryPathIsExcluded(path, patterns)) {
+  if (ignored.status === 0 || pathExcluded(path, patterns)) {
     throw new Error("That path is excluded from Critic repository access");
   }
 }
 function assertContentReadable(path) {
-  if (untrackedPathIsGenerated(path)) {
+  if (generatedPath(path)) {
     throw new Error("Generated file content is metadata-only; use read_file for its size and digest");
   }
 }
 async function workspacePath(context, path) {
-  const target = resolve6(context.root, path);
-  const root = realpathSync2(context.root);
-  const actual = realpathSync2(target);
+  const target = resolve5(context.root, path);
+  const root = realpathSync(context.root);
+  const actual = realpathSync(target);
   let canonical;
   try {
     canonical = containedPath(root, actual);
@@ -45943,12 +43750,12 @@ function gitObjectType(context, object4) {
   return checkedGit(context, ["cat-file", "-t", object4]).trim();
 }
 function contentDigest(bytes) {
-  return createHash6("sha256").update(bytes).digest("hex");
+  return createHash7("sha256").update(bytes).digest("hex");
 }
 async function fileDigest(path) {
   return await new Promise((resolveDigest, reject) => {
-    const hash2 = createHash6("sha256");
-    const input = createReadStream2(path);
+    const hash2 = createHash7("sha256");
+    const input = createReadStream(path);
     input.on("data", (chunk) => hash2.update(chunk));
     input.on("error", reject);
     input.on("end", () => resolveDigest(hash2.digest("hex")));
@@ -45968,7 +43775,7 @@ function metadataReadResult(uri, path, bytes, digest, unavailableReason, source)
 }
 function readableBytes(uri, path, bytes, source) {
   const digest = contentDigest(bytes);
-  if (untrackedPathIsGenerated(path)) {
+  if (generatedPath(path)) {
     return metadataReadResult(uri, path, bytes.length, digest, "generated", source);
   }
   if (bytes.length > MAX_READ_FILE_BYTES) {
@@ -45984,7 +43791,7 @@ function readableBytes(uri, path, bytes, source) {
   return { uri, path, source, ...bounded(content) };
 }
 async function viewPathContainsSensitiveContent(context, view, path) {
-  if (untrackedPathIsGenerated(path))
+  if (generatedPath(path))
     return true;
   let bytes;
   if (view.kind === "workspace") {
@@ -45993,7 +43800,7 @@ async function viewPathContainsSensitiveContent(context, view, path) {
     if (!workspaceStat.isFile() || workspaceStat.size > MAX_READ_FILE_BYTES) {
       return true;
     }
-    bytes = await readFile10(workspace.actual);
+    bytes = await readFile5(workspace.actual);
   } else {
     const object4 = `${view.sha}:${path}`;
     if (gitObjectType(context, object4) !== "blob")
@@ -46025,12 +43832,12 @@ async function readRepositoryFiles(context, uris) {
         throw new Error(`${uri} is not a regular file`);
       }
       const size2 = workspaceStat.size;
-      const unavailableReason = untrackedPathIsGenerated(workspace.canonical) ? "generated" : size2 > MAX_READ_FILE_BYTES ? "oversized" : undefined;
+      const unavailableReason = generatedPath(workspace.canonical) ? "generated" : size2 > MAX_READ_FILE_BYTES ? "oversized" : undefined;
       if (unavailableReason) {
         results.push(metadataReadResult(uri, workspace.canonical, size2, await fileDigest(workspace.actual), unavailableReason, source));
         continue;
       }
-      const bytes2 = await readFile10(workspace.actual);
+      const bytes2 = await readFile5(workspace.actual);
       results.push(readableBytes(uri, workspace.canonical, bytes2, source));
       continue;
     }
@@ -46040,7 +43847,7 @@ async function readRepositoryFiles(context, uris) {
     }
     const size = Number(checkedGit(context, ["cat-file", "-s", object4]).trim());
     const objectId = checkedGit(context, ["rev-parse", object4]).trim();
-    if (untrackedPathIsGenerated(view.path)) {
+    if (generatedPath(view.path)) {
       results.push(metadataReadResult(uri, view.path, size, objectId, "generated", source));
       continue;
     }
@@ -46121,7 +43928,7 @@ async function searchRepository(context, options) {
   else
     args.push("--untracked", "--exclude-standard");
   args.push("--", view.path || ".");
-  const result = spawnSync4("git", [...SAFE_GIT_CONFIG, "--literal-pathspecs", ...args], {
+  const result = spawnSync("git", [...SAFE_GIT_CONFIG, "--literal-pathspecs", ...args], {
     cwd: context.root,
     env: safeGitEnvironment(),
     encoding: "utf8"
@@ -46277,7 +44084,18 @@ async function repositoryGitBlame(context, path, sha = context.criticHeadSha) {
   return safeTextResult(checkedGit(context, ["blame", "--date=short", sha, "--", normalized]), source);
 }
 
-// cli/src/repository-mcp.ts
+// runtime/src/repository-mcp.ts
+var tools = [
+  "read_file",
+  "list_files",
+  "search",
+  "git_status",
+  "git_history",
+  "git_show",
+  "git_diff",
+  "git_blame"
+];
+var repositoryToolNames = tools;
 function contextFromEnvironment() {
   const encoded = process.env.CRITIC_REPOSITORY_CONTEXT;
   if (!encoded)
@@ -46296,50 +44114,42 @@ function result(value) {
 async function runRepositoryMcpServer() {
   const context = contextFromEnvironment();
   const server = new McpServer({ name: "critic-repository", version: criticPluginVersion }, {
-    instructions: "Read-only repository investigation. Every result identifies its exact source. repo://critic/ is the reviewed patchset, repo://workspace/ is the live authoring workspace, and repo://commit/<sha>/ is historical committed code."
+    instructions: "Read-only repository investigation. repo://critic/ is the reviewed patchset, repo://workspace/ is the live authored workspace, and repo://commit/<sha>/ is reachable committed history."
   });
   server.registerTool("read_file", {
-    description: "Read one file or several files. Relative paths use the reviewed Critic patchset; repo://workspace/ reads upcoming local work; repo://commit/<sha>/ reads history. Pass a string or an array of up to 20 paths.",
+    description: "Read up to 20 files from the reviewed patchset, live workspace, or reachable history.",
     inputSchema: { path: exports_external.union([exports_external.string(), exports_external.array(exports_external.string()).max(20)]) }
   }, async ({ path }) => result(await readRepositoryFiles(context, path)));
   server.registerTool("list_files", {
-    description: "List files under a path. Relative paths use the reviewed Critic patchset; repository URIs select another view.",
+    description: "List repository files under a path.",
     inputSchema: {
       path: exports_external.string().optional(),
       maxResults: exports_external.number().int().positive().max(500).optional()
     }
   }, async ({ path, maxResults }) => result(await listRepositoryFiles(context, path, maxResults)));
   server.registerTool("search", {
-    description: "Search repository contents. Relative paths use the reviewed Critic patchset. Fixed-string search is the default; enable regex only when needed.",
+    description: "Search repository contents.",
     inputSchema: {
       query: exports_external.string(),
       path: exports_external.string().optional(),
       regex: exports_external.boolean().optional(),
       maxResults: exports_external.number().int().positive().max(500).optional()
     }
-  }, async ({ query, path, regex, maxResults }) => result(await searchRepository(context, {
-    query,
-    uri: path,
-    regex,
-    maxResults
-  })));
-  server.registerTool("git_status", {
-    description: "Show the live authoring workspace status.",
-    inputSchema: {}
-  }, async () => result(await repositoryGitStatus(context)));
+  }, async (options) => result(await searchRepository(context, options)));
+  server.registerTool("git_status", { description: "Show live workspace status.", inputSchema: {} }, async () => result(await repositoryGitStatus(context)));
   server.registerTool("git_history", {
-    description: "List reachable commits so you can discover commit SHAs before historical inspection.",
+    description: "List reachable commits.",
     inputSchema: {
       maxCount: exports_external.number().int().positive().max(200).optional(),
       path: exports_external.string().optional()
     }
   }, async (options) => result(await repositoryGitHistory(context, options)));
   server.registerTool("git_show", {
-    description: "Inspect a reachable commit and optionally one path.",
+    description: "Inspect a reachable commit and optional path.",
     inputSchema: { sha: exports_external.string(), path: exports_external.string().optional() }
   }, async ({ sha, path }) => result(await repositoryGitShow(context, sha, path)));
   server.registerTool("git_diff", {
-    description: "Compare two reachable commits. Defaults to the Critic patchset base and head.",
+    description: "Compare reachable commits.",
     inputSchema: {
       from: exports_external.string().optional(),
       to: exports_external.string().optional(),
@@ -46353,345 +44163,893 @@ async function runRepositoryMcpServer() {
   await server.connect(new StdioServerTransport);
 }
 
-// cli/src/hook-metadata.ts
-function firstString(input, names) {
-  for (const name of names) {
-    const value = input[name];
-    if (typeof value === "string" && value.trim())
-      return value;
+// runtime/src/provider.ts
+class AgentExecutionError extends Error {
+  code;
+  retryable;
+  providerConversationId;
+  constructor(code2, message, retryable = false, providerConversationId) {
+    super(message);
+    this.code = code2;
+    this.retryable = retryable;
+    this.providerConversationId = providerConversationId;
+    this.name = "AgentExecutionError";
   }
-  return;
 }
-function lifecycleHookPayload(event, input, fallbackCwd) {
-  const sourceSessionId = findHookSessionId(input);
-  const cwd = firstString(input, ["cwd", "working_directory"]) ?? fallbackCwd;
-  const toolName = firstString(input, ["tool_name", "toolName"]);
-  return {
-    event,
-    receivedAt: new Date().toISOString(),
-    cwd,
-    hook: {
-      ...sourceSessionId ? { session_id: sourceSessionId } : {},
-      cwd,
-      ...toolName ? { tool_name: toolName } : {}
-    }
+function agentFailureDetails(error51) {
+  return error51 instanceof AgentExecutionError ? {
+    code: error51.code,
+    retryable: error51.retryable,
+    providerConversationId: error51.providerConversationId
+  } : {
+    code: "provider_error",
+    retryable: false,
+    providerConversationId: undefined
   };
 }
-
-// cli/src/publication-guidance.ts
-function publicationCheckpointReason(changeNumber, target = "github", promotionRequiredFilePaths, checkpointToken) {
-  const change = changeNumber ? ` of #${changeNumber}` : "";
-  const label = target === "local" ? "current synchronized local snapshot" : `final pushed patchset${change}`;
-  const next = target === "local" ? "A newer synchronized snapshot" : "A later pushed HEAD";
-  const scope = promotionRequiredFilePaths === undefined ? [
-    "This tool is an incremental upsert. On the first publication, include the change narrative and one file narrative for every changed path. On later calls, include only explanations that changed. Omitted explanations and their threads remain intact. Use deleteExplanations only for explanations that should be removed."
-  ] : [
-    "Critic already carried the exact unaffected file and range explanations from this session’s local publication. Do not rewrite those carried explanations.",
-    "Publish a fresh change narrative and fresh file narratives only for these affected paths.",
-    promotionRequiredFilePaths.length ? promotionRequiredFilePaths.map((path) => `- \`${path}\``).join(`
-`) : "- No file narratives are affected."
+var deadlineMs = 5 * 60000;
+var inactivityMs = 45000;
+var permissionProfile = "critic-explain";
+var conversationInstruction = [
+  "This is an isolated Critic review conversation forked from the exact task that authored the change.",
+  "Treat the supplied Critic thread and patchset context as canonical.",
+  "Use only the Critic repository MCP tools for repository investigation.",
+  "Native shell, filesystem, network, browser, connector, and write tools are outside the product contract.",
+  "repo://critic/ is what the reviewer sees. repo://workspace/ may contain later local work.",
+  "Never describe workspace-only code as already reviewed."
+].join(" ");
+function executable(name) {
+  const override = process.env[`CRITIC_${name.toUpperCase()}_EXECUTABLE`];
+  const candidates2 = [
+    override,
+    name === "codex" ? "/Applications/Codex.app/Contents/Resources/codex" : undefined,
+    name === "codex" ? "/Applications/ChatGPT.app/Contents/Resources/codex" : undefined,
+    process.env.HOME ? `${process.env.HOME}/.local/bin/${name}` : undefined,
+    process.env.HOME ? `${process.env.HOME}/.bun/bin/${name}` : undefined,
+    `/opt/homebrew/bin/${name}`,
+    `/usr/local/bin/${name}`
   ];
-  return [
-    `Critic scheduled the explanation checkpoint for the ${label}.`,
-    "",
-    `Stay in this authoring session. Do not fork or reconstruct intent in a new conversation. ${next} creates a different checkpoint.`,
-    "",
-    checkpointToken ? `Make exactly one critic.publish_patchset call. Pass checkpointToken \`${checkpointToken}\` unchanged. It is short lived and valid only for this account, device, authoring session, target, and revision.` : "Critic did not supply the required checkpoint token. Do not substitute another publication path. Finish again after the connection recovers.",
-    "",
-    ...scope,
-    "",
-    "Load Critic’s explain-change skill and follow its complete publication contract. In particular, write one concise change narrative with incoming and outgoing boundaries, write exactly one useful file narrative for every required changed path, and add range explanations only at semantic cliffs.",
-    "",
-    "Write for a reader who is scanning. Use as many complete sentences as the explanation needs, but give each sentence a distinct purpose. Do not create fragments just to make it shorter. State uncertainty instead of inventing intent.",
-    "",
-    "For a meaningful UI or rendering change, inspect the integrated product and attach only representative evidence you personally inspected. Prefer three to six high-signal screenshots when materially different states changed. Use self-contained interactive HTML only when it makes the behavior clearer.",
-    "",
-    "Only the change narrative may set sharedPreviewUrl or localPreviewInstructions. sharedPreviewUrl must be an independently accessible HTTP(S) URL and never localhost.",
-    "",
-    `Before publishing, confirm every explanation and anchor matches the exact ${label}, and confirm every required changed path has exactly one file narrative. After publication, open the returned canonical Critic URL and verify the result. Use that URL as the primary handoff.`
-  ].join(`
-`);
+  const found = candidates2.find((candidate) => typeof candidate === "string" && existsSync(candidate));
+  if (found)
+    return found;
+  const shell = process.env.SHELL ?? "/bin/sh";
+  const lookup2 = spawnSync2(shell, ["-lc", `command -v ${name}`], {
+    encoding: "utf8",
+    timeout: 2000
+  });
+  const path = lookup2.status === 0 ? lookup2.stdout.trim() : "";
+  if (path.startsWith("/") && existsSync(path))
+    return path;
+  throw new AgentExecutionError("agent_unavailable", `${name === "codex" ? "Codex" : "Claude Code"} is not available on the connected device.`);
 }
-
-// cli/src/claude-managed-policy.ts
-import { readdir, readFile as readFile11 } from "node:fs/promises";
-import { execFileSync } from "node:child_process";
-import { join as join5 } from "node:path";
-var CRITIC_PLUGIN_ID = "critic@critic";
-function object4(value) {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : undefined;
+function runtimeCommand() {
+  const entrypoint = process.argv[1];
+  if (!entrypoint)
+    throw new Error("Critic runtime entrypoint is unavailable");
+  return { command: process.execPath, args: [entrypoint, "repo-mcp"] };
 }
-function claudeManagedHooksBlockCritic(settings) {
-  let managedHooksOnly = false;
-  const enabledPlugins = {};
-  for (const value of settings) {
-    const document = object4(value);
-    if (!document)
-      continue;
-    if (typeof document.allowManagedHooksOnly === "boolean") {
-      managedHooksOnly = document.allowManagedHooksOnly;
-    }
-    Object.assign(enabledPlugins, object4(document.enabledPlugins));
-  }
-  if (!managedHooksOnly)
-    return false;
-  return enabledPlugins[CRITIC_PLUGIN_ID] !== true;
+function repositoryContext(context) {
+  return Buffer.from(JSON.stringify(context)).toString("base64url");
 }
-async function jsonFile(path) {
-  try {
-    return JSON.parse(await readFile11(path, "utf8"));
-  } catch {
-    return;
-  }
-}
-async function jsonFilesIn(path) {
-  try {
-    const entries = await readdir(path, { withFileTypes: true });
-    return await Promise.all(entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json")).sort((left, right) => left.name.localeCompare(right.name)).map((entry) => jsonFile(join5(path, entry.name))));
-  } catch {
-    return [];
-  }
-}
-function managedSettingsRoot() {
-  if (process.platform === "darwin") {
-    return "/Library/Application Support/ClaudeCode";
-  }
-  if (process.platform === "win32") {
-    return join5(process.env.ProgramFiles ?? "C:\\Program Files", "ClaudeCode");
-  }
-  return "/etc/claude-code";
-}
-function macOsManagedPreferences() {
-  if (process.platform !== "darwin")
-    return;
-  try {
-    const plist = execFileSync("/usr/bin/defaults", ["export", "com.anthropic.claudecode", "-"], { stdio: ["ignore", "pipe", "ignore"] });
-    const json2 = execFileSync("/usr/bin/plutil", ["-convert", "json", "-o", "-", "-"], { input: plist, stdio: ["pipe", "pipe", "ignore"] });
-    return JSON.parse(json2.toString("utf8"));
-  } catch {
-    return;
-  }
-}
-async function claudeHookPolicyBlocksCritic() {
-  const root = managedSettingsRoot();
-  const managedPreferences = macOsManagedPreferences();
-  const settings = (managedPreferences === undefined ? [
-    await jsonFile(join5(root, "managed-settings.json")),
-    ...await jsonFilesIn(join5(root, "managed-settings.d"))
-  ] : [managedPreferences]).filter((value) => value !== undefined);
-  return claudeManagedHooksBlockCritic(settings);
-}
-var claudeAdministratorPolicyError = "Administrator policy blocks Critic lifecycle hooks. Ask an administrator to force-enable critic@critic in managed settings enabledPlugins.";
-
-// cli/src/hook-output.ts
-function blockingHookOutput(agent, reason) {
-  if (agent === "claude") {
-    return {
-      decision: "block",
-      reason
-    };
-  }
+function repositoryServer(request2) {
+  const runtime = runtimeCommand();
   return {
-    decision: "block",
-    reason,
-    continue: false,
-    stopReason: reason
+    command: runtime.command,
+    args: runtime.args,
+    env: {
+      CRITIC_REPOSITORY_CONTEXT: repositoryContext(request2.repository)
+    }
   };
 }
+function quotedArray(values) {
+  return `[${values.map((value) => JSON.stringify(value)).join(",")}]`;
+}
+function codexMcpConfig(request2) {
+  const server = repositoryServer(request2);
+  return `{critic_repository={command=${JSON.stringify(server.command)},args=${quotedArray(server.args)},env={CRITIC_REPOSITORY_CONTEXT=${JSON.stringify(server.env.CRITIC_REPOSITORY_CONTEXT)}},enabled_tools=${quotedArray(repositoryToolNames)}}}`;
+}
+function assertCodexMessageSucceeded(message, threadId) {
+  if (message.error) {
+    throw new AgentExecutionError("provider_error", message.error.message || "Codex app-server failed.", false, threadId);
+  }
+  if (message.method === "error" && message.params?.error?.message && !message.params.willRetry) {
+    throw new AgentExecutionError("provider_error", message.params.error.message, false, threadId);
+  }
+}
+function answerCodexElicitation(message, send) {
+  send({
+    id: message.id,
+    result: message.params?.serverName === "critic_repository" ? { action: "accept", content: {} } : { action: "decline" }
+  });
+}
+function initializeCodexThread(request2, send) {
+  send({ method: "initialized", params: {} });
+  send({
+    id: 1,
+    method: request2.providerConversationId ? "thread/resume" : "thread/fork",
+    params: request2.providerConversationId ? {
+      threadId: request2.providerConversationId,
+      permissions: permissionProfile,
+      approvalPolicy: "never",
+      developerInstructions: conversationInstruction
+    } : {
+      threadId: request2.sourceConversationId,
+      cwd: request2.cwd,
+      ephemeral: false,
+      permissions: permissionProfile,
+      approvalPolicy: "never",
+      developerInstructions: conversationInstruction
+    }
+  });
+}
+function startCodexTurn(message, request2, state, send) {
+  state.threadId = message.result?.thread?.id;
+  if (!state.threadId)
+    throw new Error("Codex did not fork the authored task");
+  if (message.result?.activePermissionProfile?.id !== permissionProfile) {
+    throw new AgentExecutionError("permission_profile_mismatch", "Codex did not activate the Critic read-only permission boundary.", false, state.threadId);
+  }
+  send({
+    id: 2,
+    method: "turn/start",
+    params: {
+      threadId: state.threadId,
+      input: request2.input.map((part) => ({
+        type: "text",
+        text: part.text,
+        text_elements: []
+      }))
+    }
+  });
+}
+function appendCodexDelta(message, request2, state) {
+  const delta = message.params?.delta ?? "";
+  state.activeMessage += delta;
+  state.answer += delta;
+  request2.onDelta?.(delta);
+}
+function completeCodexMessage(message, request2, state) {
+  const completed = message.params?.item?.text ?? "";
+  if (!state.activeMessage) {
+    state.answer += completed;
+    request2.onDelta?.(completed);
+  } else if (completed && completed !== state.activeMessage) {
+    state.answer = `${state.answer.slice(0, -state.activeMessage.length)}${completed}`;
+  }
+  state.activeMessage = "";
+}
+function completeCodexTurn(message, threadId) {
+  if (message.params?.turn?.status === "completed")
+    return true;
+  throw new AgentExecutionError("provider_interrupted", message.params?.turn?.error?.message || "Codex stopped before answering.", true, threadId);
+}
+function processCodexMessage(message, request2, state, send) {
+  assertCodexMessageSucceeded(message, state.threadId);
+  if (message.method === "mcpServer/elicitation/request") {
+    answerCodexElicitation(message, send);
+    return false;
+  }
+  if (message.id === 0 && !message.method) {
+    initializeCodexThread(request2, send);
+    return false;
+  }
+  if (message.id === 1 && !message.method) {
+    startCodexTurn(message, request2, state, send);
+    return false;
+  }
+  if (message.method === "item/agentMessage/delta") {
+    appendCodexDelta(message, request2, state);
+    return false;
+  }
+  if (message.method === "item/completed" && message.params?.item?.type === "agentMessage") {
+    completeCodexMessage(message, request2, state);
+    return false;
+  }
+  return message.method === "turn/completed" ? completeCodexTurn(message, state.threadId) : false;
+}
+function codexCommand(request2, executablePath = executable("codex")) {
+  return [
+    executablePath,
+    "app-server",
+    "-c",
+    'web_search="disabled"',
+    "-c",
+    "features.shell_tool=false",
+    "-c",
+    "features.unified_exec=false",
+    "-c",
+    "features.apps=false",
+    "-c",
+    "features.multi_agent=false",
+    "-c",
+    "features.code_mode_host=false",
+    "-c",
+    `default_permissions=${JSON.stringify(permissionProfile)}`,
+    "-c",
+    `permissions.${permissionProfile}.filesystem={}`,
+    "-c",
+    `permissions.${permissionProfile}.network={enabled=false}`,
+    "-c",
+    `mcp_servers=${codexMcpConfig(request2)}`
+  ];
+}
+function executeStreamingProcess(input) {
+  const child = spawn3(input.command, input.args, {
+    cwd: input.cwd,
+    stdio: ["pipe", "pipe", "pipe"]
+  });
+  let stderr = "";
+  let buffer = "";
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => {
+    if (stderr.length < 16384)
+      stderr += String(chunk);
+  });
+  const send = (value) => child.stdin.write(`${JSON.stringify(value)}
+`);
+  return new Promise((resolve6, reject) => {
+    let settled = false;
+    let inactivity;
+    const deadline = setTimeout(() => finish(new AgentExecutionError("deadline_exceeded", "The coding agent took too long to answer this question.", true, input.providerConversationId())), deadlineMs);
+    const touch = () => {
+      clearTimeout(inactivity);
+      inactivity = setTimeout(() => finish(new AgentExecutionError("provider_inactive", "The coding agent stopped making progress.", true, input.providerConversationId())), inactivityMs);
+    };
+    const finish = (error51) => {
+      if (settled)
+        return;
+      settled = true;
+      clearTimeout(deadline);
+      clearTimeout(inactivity);
+      child.kill();
+      if (error51) {
+        reject(error51);
+        return;
+      }
+      try {
+        resolve6(input.result());
+      } catch (resultError) {
+        reject(resultError instanceof Error ? resultError : new Error(String(resultError)));
+      }
+    };
+    child.stdin.on("error", (error51) => finish(error51));
+    inactivity = setTimeout(() => {
+      return;
+    }, inactivityMs);
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      touch();
+      buffer += String(chunk);
+      const lines = buffer.split(`
+`);
+      buffer = lines.pop() ?? "";
+      try {
+        for (const line of lines) {
+          if (line.trim() && input.line(line, send)) {
+            finish();
+            return;
+          }
+        }
+      } catch (error51) {
+        finish(error51 instanceof Error ? error51 : new Error(String(error51)));
+      }
+    });
+    child.once("error", (error51) => finish(error51));
+    child.once("close", () => {
+      if (!settled) {
+        finish(new AgentExecutionError("provider_interrupted", stderr.trim() || "The coding agent stopped before answering.", true, input.providerConversationId()));
+      }
+    });
+    input.stdin?.(send);
+    touch();
+  });
+}
+async function answerWithCodex(request2) {
+  const state = {
+    answer: "",
+    activeMessage: "",
+    threadId: request2.providerConversationId
+  };
+  const [command, ...args] = codexCommand(request2);
+  return await executeStreamingProcess({
+    command,
+    args,
+    cwd: request2.cwd,
+    providerConversationId: () => state.threadId,
+    result: () => {
+      if (!state.threadId || !state.answer.trim()) {
+        throw new AgentExecutionError("provider_error", "Codex returned no answer.", false, state.threadId);
+      }
+      return {
+        answer: state.answer.trim(),
+        providerConversationId: state.threadId
+      };
+    },
+    stdin: (send) => send({
+      method: "initialize",
+      id: 0,
+      params: {
+        clientInfo: {
+          name: "critic",
+          title: "Critic",
+          version: criticPluginVersion
+        },
+        capabilities: {
+          experimentalApi: true,
+          requestAttestation: false,
+          optOutNotificationMethods: ["item/reasoning/delta"]
+        }
+      }
+    }),
+    line: (line, send) => processCodexMessage(JSON.parse(line), request2, state, send)
+  });
+}
+function claudeCommand(request2, executablePath = executable("claude")) {
+  const server = repositoryServer(request2);
+  return [
+    executablePath,
+    "--print",
+    ...request2.providerConversationId ? ["--resume", request2.providerConversationId] : ["--resume", request2.sourceConversationId, "--fork-session"],
+    "--permission-mode",
+    "dontAsk",
+    "--tools",
+    "",
+    "--mcp-config",
+    JSON.stringify({ mcpServers: { critic_repository: server } }),
+    "--strict-mcp-config",
+    "--allowedTools",
+    ...repositoryToolNames.map((tool) => `mcp__critic_repository__${tool}`),
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--include-partial-messages",
+    "--append-system-prompt",
+    conversationInstruction,
+    contentText(request2.input)
+  ];
+}
+async function answerWithClaude(request2) {
+  let sessionId2 = request2.providerConversationId ?? request2.sourceConversationId;
+  let answer = "";
+  let streamed = false;
+  const [command, ...args] = claudeCommand(request2);
+  return await executeStreamingProcess({
+    command,
+    args,
+    cwd: request2.cwd,
+    providerConversationId: () => sessionId2,
+    result: () => {
+      if (!answer.trim()) {
+        throw new AgentExecutionError("provider_error", "Claude Code returned no answer.", false, sessionId2);
+      }
+      return { answer: answer.trim(), providerConversationId: sessionId2 };
+    },
+    line: (line) => {
+      const message = JSON.parse(line);
+      if (message.session_id)
+        sessionId2 = message.session_id;
+      const delta = message.type === "stream_event" && message.event?.type === "content_block_delta" ? message.event.delta?.text : undefined;
+      if (delta) {
+        streamed = true;
+        answer += delta;
+        request2.onDelta?.(delta);
+      }
+      if (message.type !== "result")
+        return false;
+      if (message.is_error) {
+        throw new AgentExecutionError("provider_error", message.result || "Claude Code could not answer.", false, sessionId2);
+      }
+      if (!streamed && message.result)
+        request2.onDelta?.(message.result);
+      answer = message.result ?? answer;
+      return true;
+    }
+  });
+}
+async function answerWithAgent(provider, request2) {
+  return provider === "codex" ? await answerWithCodex(request2) : await answerWithClaude(request2);
+}
+async function discardAgentConversation(_provider, _providerConversationId) {}
 
-// cli/src/index.ts
-function option(name) {
-  const index = process.argv.indexOf(name);
-  return index === -1 ? undefined : process.argv[index + 1];
+// runtime/src/question.ts
+function tokenHash2(value) {
+  return createHash8("sha256").update(value).digest("hex");
 }
-function usage() {
-  console.log(`Critic agent bridge
+async function repositoryForQuestion(provider, claim) {
+  const session = await loadSession(provider, claim.targetSessionId);
+  const available = session && session.owner.toLowerCase() === claim.workspace.owner.toLowerCase() && session.repository.toLowerCase() === claim.workspace.repository.toLowerCase() && await stat5(session.cwd).catch(() => null);
+  const cwd = available ? session.cwd : unavailableRepositoryDirectory(provider);
+  const context = {
+    root: cwd,
+    baseSha: claim.workspace.baseSha,
+    criticHeadSha: claim.workspace.headSha,
+    ...!available ? {
+      unavailableReason: "the exact authored checkout is not available on this device"
+    } : {}
+  };
+  return { cwd, context };
+}
+function withRepositoryAvailability(input, context) {
+  if (!context.unavailableReason)
+    return input;
+  return [
+    ...input,
+    {
+      type: "text",
+      text: `
 
-Usage:
-  critic connect --url <convex-site-url> --token <pairing-token> --agent codex|claude
-  critic login --url <convex-site-url> --token <pairing-token> [--agent codex|claude]
-  critic daemon
-  critic hook <session-start|user-prompt-submit|post-tool-use|stop>
-  critic repo-mcp
-  critic disconnect
-  critic status`);
+Critic repository tools are unavailable because ${context.unavailableReason}. Preserve the supplied review context and exact authored identity. Explain the limitation instead of using another checkout.`
+    }
+  ];
 }
-function blockHook(agent, reason) {
-  console.log(JSON.stringify(blockingHookOutput(agent, reason)));
+function progressReporter(agentCall, questionId, leaseHash) {
+  let buffer = "";
+  let sequence = 0;
+  let timer;
+  let pending = Promise.resolve();
+  const dispatch = () => {
+    if (timer)
+      clearTimeout(timer);
+    timer = undefined;
+    while (buffer) {
+      const delta = buffer.slice(0, 16000);
+      buffer = buffer.slice(16000);
+      sequence += 1;
+      const currentSequence = sequence;
+      pending = pending.then(async () => {
+        await agentCall("progress", {
+          questionId,
+          tokenHash: leaseHash,
+          delta,
+          sequence: currentSequence
+        });
+      });
+    }
+  };
+  return {
+    report(delta) {
+      buffer += delta;
+      if (buffer.length >= 1024)
+        dispatch();
+      else if (!timer) {
+        timer = setTimeout(dispatch, 120);
+        timer.unref();
+      }
+    },
+    async flush() {
+      dispatch();
+      await pending;
+    }
+  };
 }
-function hookWorkingDirectory(hookInput) {
-  if (typeof hookInput.cwd === "string" && hookInput.cwd)
-    return hookInput.cwd;
+async function runQuestion(provider, question, agentCall) {
+  const leaseToken = randomBytes7(32).toString("hex");
+  const leaseHash = tokenHash2(leaseToken);
+  let claim = null;
+  let partialAnswer = "";
+  let providerConversationId;
   try {
-    return process.cwd();
-  } catch {
-    return configDirectory;
-  }
-}
-async function login() {
-  const convexUrl = option("--url");
-  const pairingToken = option("--token");
-  const requestedAgent = option("--agent") ?? "codex";
-  if (!convexUrl || !pairingToken || !isLocalAgentProvider(requestedAgent)) {
-    throw new Error("login requires --url, --token, and a valid optional --agent");
-  }
-  const url2 = new URL(convexUrl);
-  if (url2.protocol !== "https:" && url2.hostname !== "localhost") {
-    throw new Error("Critic URL must use HTTPS");
-  }
-  if (requestedAgent === "claude" && await claudeHookPolicyBlocksCritic()) {
-    await fetch(`${convexUrl.replace(/\/$/, "")}/agent`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${pairingToken}`,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "setup_failure",
-        errorCode: "administrator_policy_blocks_hooks"
-      })
+    claim = await agentCall("claim", {
+      questionId: question._id,
+      tokenHash: leaseHash
+    });
+    if (!claim)
+      return;
+    if (claim.agent !== provider) {
+      throw new Error("Question belongs to another coding agent");
+    }
+    const repository = await repositoryForQuestion(provider, claim);
+    const progress = progressReporter(agentCall, question._id, leaseHash);
+    const renewal = setInterval(() => {
+      agentCall("renew", {
+        questionId: question._id,
+        tokenHash: leaseHash
+      }).catch(() => {
+        return;
+      });
+    }, 15000);
+    renewal.unref();
+    try {
+      const request2 = {
+        input: withRepositoryAvailability(claim.input, repository.context),
+        repository: repository.context,
+        providerConversationId: claim.providerConversationId,
+        sourceConversationId: claim.targetSessionId,
+        cwd: repository.cwd
+      };
+      let result2;
+      let answer;
+      if (claim.responseMode === "evaluate") {
+        let begin;
+        const ambient = await runAmbientResponse({
+          request: request2,
+          answer: (next) => answerWithAgent(provider, next),
+          discard: (conversationId) => discardAgentConversation(provider, conversationId),
+          onAnswerStart: () => {
+            begin = agentCall("begin_response", {
+              questionId: question._id,
+              tokenHash: leaseHash
+            });
+          },
+          onAnswerText: (delta) => {
+            partialAnswer += delta;
+            progress.report(delta);
+          }
+        });
+        if (ambient.decision === "pass") {
+          await progress.flush();
+          await agentCall("pass", {
+            questionId: question._id,
+            tokenHash: leaseHash,
+            reason: ambient.reason,
+            providerConversationId: ambient.providerConversationId
+          });
+          return;
+        }
+        await begin;
+        result2 = ambient.result;
+        answer = ambient.answer;
+      } else {
+        const stream = new RequiredAnswerStream((delta) => {
+          partialAnswer += delta;
+          progress.report(delta);
+        });
+        result2 = await answerWithAgent(provider, {
+          ...request2,
+          onDelta: (delta) => stream.push(delta)
+        });
+        stream.finish();
+        answer = requiredAnswerText(result2.answer);
+      }
+      providerConversationId = result2.providerConversationId;
+      await progress.flush();
+      await agentCall("complete", {
+        questionId: question._id,
+        tokenHash: leaseHash,
+        answer,
+        providerConversationId
+      });
+    } finally {
+      clearInterval(renewal);
+    }
+  } catch (error51) {
+    if (!claim)
+      return;
+    const failure = agentFailureDetails(error51);
+    await agentCall("fail", {
+      questionId: question._id,
+      tokenHash: leaseHash,
+      error: error51 instanceof Error ? error51.message : String(error51),
+      errorCode: failure.code,
+      retryable: failure.retryable,
+      providerConversationId: failure.providerConversationId ?? providerConversationId,
+      partialAnswer: partialAnswer.trim().slice(0, 1e5) || undefined
     }).catch(() => {
       return;
     });
-    throw new Error(claudeAdministratorPolicyError);
   }
-  const authToken = `critic_dev_${randomBytes6(32).toString("hex")}`;
-  const response = await fetch(`${convexUrl.replace(/\/$/, "")}/agent`, {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${pairingToken}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      action: "pair",
-      deviceKeyHash: createHash7("sha256").update(authToken).digest("hex")
-    })
-  });
-  const paired = await response.json();
-  if (!response.ok || !paired.ok || !paired.result) {
-    throw new Error(paired.error ?? "Could not pair this device");
-  }
-  await saveConfig({
-    convexUrl,
-    authToken,
-    agent: paired.result.agent,
-    deviceId: paired.result.deviceId,
-    deviceName: option("--name") ?? hostname3()
-  });
-  console.log("Device paired.");
-  return paired.result.agent;
 }
-async function connect() {
-  const agent = await login();
-  await restartDaemon({ requireOnline: true });
-  console.log(`Critic is connected to ${localAgentProviderContract(agent).label}.`);
-}
-async function disconnect() {
-  const config2 = await loadConfig();
-  if (!config2) {
-    console.log("Critic is already disconnected.");
-    return;
-  }
-  const response = await fetch(`${config2.convexUrl.replace(/\/$/, "")}/agent`, {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${config2.authToken}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({ action: "disconnect" })
-  });
-  const result2 = await response.json().catch(() => null);
-  if (!response.ok && response.status !== 401) {
-    throw new Error(result2?.error ?? "Critic could not revoke this connection. The local installation was kept so you can retry.");
-  }
-  await stopRunningDaemon();
-  await removeLocalInstallation();
-  console.log("Critic disconnected this bridge and removed its local state.");
-}
-async function hook(event) {
-  if (!isCriticLifecycleEvent(event))
-    throw new Error("Unknown hook event");
-  const rawInput = await readStandardInput();
-  const hookInput = rawInput ? JSON.parse(rawInput) : {};
-  const agent = (await loadConfig())?.agent;
-  const payload = lifecycleHookPayload(event, hookInput, hookWorkingDirectory(hookInput));
-  let result2;
-  let hookError;
-  try {
-    await ensureDaemon();
-    result2 = await sendToDaemon({ method: "hook", payload });
-  } catch (error51) {
-    hookError = error51 instanceof Error ? error51.message : String(error51);
-    if (findHookSessionId(payload)) {
-      await ensureLocalDirectory();
-      await appendFile(spoolPath, `${JSON.stringify(payload)}
-`, {
-        encoding: "utf8",
-        mode: 384
-      });
-    }
-    if (event === "stop") {
-      blockHook(agent, `Critic could not verify this authoring checkpoint: ${hookError}. Retry after the Critic connection recovers; do not silently substitute a GitHub-only handoff.`);
-    }
-  }
-  if (event === "session-start") {
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "SessionStart",
-        additionalContext: hookError ? `Critic queued this session hook because the bridge is temporarily unavailable (${hookError}). Do not claim that Critic is attached until the queued hook is delivered.` : "Critic is attached to this authoring session. It tracks each pushed pull-request HEAD deterministically and will schedule one explanation checkpoint in this same session when that patchset is ready. Do not fork to author the initial explanations. Questions from Critic are handled separately against stable patchsets."
+function createQuestionRunner(provider, agentCall) {
+  const pending = new Map;
+  let running = false;
+  const drain = async () => {
+    if (running)
+      return;
+    running = true;
+    try {
+      while (pending.size) {
+        const question = pending.values().next().value;
+        if (!question)
+          break;
+        pending.delete(question._id);
+        await runQuestion(provider, question, agentCall);
       }
-    }));
-  } else if (result2 && typeof result2 === "object") {
-    const checkpoint = result2;
-    if (checkpoint.verificationError) {
-      blockHook(agent, `Critic could not verify this authoring checkpoint (${checkpoint.verificationError}). Reconnect Critic or resolve repository access, then finish again.`);
-      return;
+    } finally {
+      running = false;
     }
-    if (checkpoint.awaitingSync) {
-      blockHook(agent, checkpoint.target === "local" ? "Critic is synchronizing the current local snapshot. Wait briefly, then finish again; the explanation checkpoint will run in this same authoring session." : "Critic is synchronizing the current pushed patchset. Wait briefly, then finish again; the explanation checkpoint will run in this same authoring session.");
-      return;
+  };
+  return {
+    update(questions) {
+      const ids = new Set(questions.map((question) => question._id));
+      for (const id of pending.keys()) {
+        if (!ids.has(id))
+          pending.delete(id);
+      }
+      for (const question of questions)
+        pending.set(question._id, question);
+      drain();
     }
-    if (checkpoint.requiresPublication) {
-      blockHook(agent, publicationCheckpointReason(checkpoint.changeNumber, checkpoint.target, checkpoint.promotionRequiredFilePaths, checkpoint.checkpointToken));
-      return;
-    }
-    if (checkpoint.authoringPushError) {
-      blockHook(agent, `Critic could not prepare the queued Push Changes command (${checkpoint.authoringPushError}). Review the workspace, then request Push Changes again.`);
-      return;
-    }
-    if (checkpoint.requiresAuthoringPush) {
-      blockHook(agent, authoringPushCheckpointReason(checkpoint.authoringPushBranch ?? "the current branch"));
-      return;
-    }
-  }
+  };
 }
-async function main() {
-  const [, , command2, argument] = process.argv;
-  if (command2 === "connect")
-    await connect();
-  else if (command2 === "login")
-    await login();
-  else if (command2 === "daemon")
-    await runDaemon();
-  else if (command2 === "hook")
-    await hook(argument);
-  else if (command2 === "repo-mcp")
-    await runRepositoryMcpServer();
-  else if (command2 === "disconnect")
-    await disconnect();
-  else if (command2 === "status") {
-    const config2 = await loadConfig();
-    if (!config2)
-      throw new Error("Critic is not configured");
-    await ensureDaemon();
-    await sendToDaemon({ method: "status" }).catch(() => {
+
+// runtime/src/connector.ts
+var heartbeatIntervalMs = 45000;
+function startConnectorHeartbeat(report) {
+  const timer = setInterval(() => {
+    report().catch(() => {
       return;
     });
-    console.log(await daemonHealth());
-  } else
+  }, heartbeatIntervalMs);
+  return () => clearInterval(timer);
+}
+function deviceKeyHash(value) {
+  return createHash9("sha256").update(value).digest("hex");
+}
+function convexDeploymentUrl(serviceUrl) {
+  const url2 = new URL(serviceUrl);
+  if (url2.hostname.endsWith(".convex.site")) {
+    url2.hostname = url2.hostname.replace(/\.convex\.site$/, ".convex.cloud");
+  } else if ((url2.hostname === "localhost" || url2.hostname === "127.0.0.1") && url2.port === "3211") {
+    url2.port = "3210";
+  }
+  return url2.origin;
+}
+function authorized(request2, descriptor) {
+  return request2.headers.authorization === `Bearer ${descriptor.controlToken}`;
+}
+async function startControlServer(descriptor, shutdown, activateSession) {
+  const server = createServer(async (request2, response) => {
+    if (request2.method !== "POST" || !authorized(request2, descriptor) || !["/ping", "/shutdown", "/session"].includes(request2.url ?? "")) {
+      response.writeHead(404).end();
+      return;
+    }
+    if (request2.url === "/session") {
+      let raw = "";
+      request2.setEncoding("utf8");
+      for await (const chunk of request2) {
+        raw += String(chunk);
+        if (raw.length > 4096) {
+          response.writeHead(413).end();
+          return;
+        }
+      }
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        response.writeHead(400).end();
+        return;
+      }
+      if (typeof body.sessionId !== "string" || !body.sessionId) {
+        response.writeHead(400).end();
+        return;
+      }
+      activateSession(body.sessionId);
+    }
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify(descriptor));
+    if (request2.url === "/shutdown")
+      setImmediate(shutdown);
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    server.close();
+    throw new Error("Critic could not open its control socket");
+  }
+  descriptor.port = address.port;
+  return server;
+}
+async function runConnector(provider) {
+  if (!process.env.CRITIC_CONNECTOR_NONCE) {
+    throw new Error("Critic connectors may only be started by a lifecycle hook");
+  }
+  const config2 = await loadConfig(provider);
+  if (!config2)
+    return;
+  await ensureRuntimeDirectories(provider);
+  const runtimeInstanceId = randomUUID();
+  const descriptor = {
+    version: 1,
+    provider,
+    pluginVersion: criticPluginVersion,
+    runtimeInstanceId,
+    pid: process.pid,
+    port: 0,
+    controlToken: randomBytes8(32).toString("base64url"),
+    startedAt: Date.now()
+  };
+  const client = new ConvexClient2(convexDeploymentUrl(config2.serviceUrl));
+  const agentCall = createAgentClient(config2);
+  const questions = createQuestionRunner(provider, agentCall);
+  const pushes = createPushRunner(provider, agentCall);
+  const onboarding = createOnboardingRunner(provider, agentCall);
+  const media = createMediaRunner(provider, agentCall);
+  const activeSessionIds = new Set((await listSessions(provider)).map((session) => session.sessionId));
+  let stopping = false;
+  let unsubscribers = [];
+  const lifecycle = {};
+  const shutdown = () => {
+    if (stopping)
+      return;
+    stopping = true;
+    lifecycle.stopHeartbeat?.();
+    for (const unsubscribe of unsubscribers)
+      unsubscribe();
+    onboarding.stop();
+    lifecycle.server?.close();
+    clearConnector(provider, runtimeInstanceId).then(() => client.close()).finally(() => process.exit(0));
+  };
+  lifecycle.server = await startControlServer(descriptor, shutdown, (sessionId2) => {
+    activeSessionIds.delete(sessionId2);
+    activeSessionIds.add(sessionId2);
+    while (activeSessionIds.size > 100) {
+      const oldest = activeSessionIds.values().next().value;
+      if (!oldest)
+        break;
+      activeSessionIds.delete(oldest);
+    }
+  });
+  await saveConnector(descriptor);
+  const subscription = {
+    deviceId: config2.deviceId,
+    deviceKeyHash: deviceKeyHash(config2.authToken)
+  };
+  unsubscribers = [
+    client.onUpdate(api.agentBridge.watchPending, subscription, questions.update, () => {
+      return;
+    }),
+    client.onUpdate(api.localPushes.watchPushCommands, subscription, pushes.update, () => {
+      return;
+    }),
+    client.onUpdate(api.onboarding.watchCommands, subscription, onboarding.update, () => {
+      return;
+    }),
+    client.onUpdate(api.remotePublications.watchPendingMedia, subscription, media.update, () => {
+      return;
+    })
+  ];
+  const report = async () => {
+    await agentCall("heartbeat", bridgeReport({
+      runtimeInstanceId,
+      activeSessionIds: [...activeSessionIds]
+    }));
+  };
+  await report().catch(() => {
+    return;
+  });
+  lifecycle.stopHeartbeat = startConnectorHeartbeat(report);
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
+}
+
+// runtime/src/types.ts
+var providers = ["codex", "claude"];
+var lifecycleEvents = [
+  "session-start",
+  "user-prompt-submit",
+  "post-tool-use",
+  "stop"
+];
+
+// runtime/src/provider-selection.ts
+function option(argv, name) {
+  const index = argv.indexOf(name);
+  return index < 0 ? undefined : argv[index + 1];
+}
+function providerFromInvocation(argv, environment) {
+  const explicit = option(argv, "--provider") ?? option(argv, "--agent") ?? environment.CRITIC_PROVIDER;
+  if (!explicit)
+    return "codex";
+  if (!providers.includes(explicit)) {
+    throw new Error("Unknown coding agent");
+  }
+  return explicit;
+}
+
+// runtime/src/main.ts
+function option2(name) {
+  const index = process.argv.indexOf(name);
+  return index < 0 ? undefined : process.argv[index + 1];
+}
+function isLifecycleEvent(value) {
+  return lifecycleEvents.includes(value);
+}
+async function standardInput(maxBytes = 2 * 1024 * 1024) {
+  let value = "";
+  process.stdin.setEncoding("utf8");
+  for await (const chunk of process.stdin) {
+    value += String(chunk);
+    if (Buffer.byteLength(value) > maxBytes) {
+      throw new Error("Critic hook input is too large");
+    }
+  }
+  return value;
+}
+async function connect(provider) {
+  const serviceUrl = option2("--url");
+  const pairingToken = option2("--token");
+  if (!serviceUrl || !pairingToken) {
+    throw new Error("connect requires --url and --token");
+  }
+  await pairDevice({
+    provider,
+    serviceUrl,
+    pairingToken,
+    deviceName: option2("--name") ?? hostname4()
+  });
+  const connector = await ensureConnector(provider);
+  if (!connector)
+    throw new Error("Critic could not start its connector");
+  process.stdout.write(`Critic is connected to ${provider === "codex" ? "Codex" : "Claude Code"}.
+`);
+}
+async function disconnect(provider) {
+  const config2 = await loadConfig(provider);
+  if (!config2) {
+    process.stdout.write(`Critic is already disconnected.
+`);
+    return;
+  }
+  await createAgentClient(config2)("disconnect").catch((error51) => {
+    if (!String(error51).includes("401"))
+      throw error51;
+  });
+  await stopConnector(provider);
+  await removeProviderState(provider);
+  process.stdout.write(`Critic disconnected this device and removed its state.
+`);
+}
+async function status(provider) {
+  const config2 = await loadConfig(provider);
+  if (!config2)
+    throw new Error("Critic is not connected");
+  const connector = await ensureConnector(provider);
+  const remote = await createAgentClient(config2)("status", {
+    ...bridgeReport({
+      runtimeInstanceId: connector?.runtimeInstanceId ?? `status-${process.pid}`,
+      activeSessionIds: (await listSessions(provider)).map((session) => session.sessionId)
+    })
+  });
+  process.stdout.write(`${JSON.stringify({
+    connected: true,
+    provider,
+    deviceId: remote.deviceId,
+    connectorVersion: connector?.pluginVersion
+  })}
+`);
+}
+async function hook(provider, event) {
+  if (!isLifecycleEvent(event))
+    throw new Error("Unknown hook event");
+  const raw = await standardInput();
+  const input = raw.trim() ? JSON.parse(raw) : {};
+  await handleHook(provider, event, input);
+}
+function usage() {
+  process.stdout.write(`Critic
+
+Usage:
+  critic connect --url <service-url> --token <pairing-token> --provider codex|claude
+  critic hook <session-start|user-prompt-submit|post-tool-use|stop>
+  critic connector --provider codex|claude
+  critic repo-mcp
+  critic status --provider codex|claude
+  critic disconnect --provider codex|claude
+`);
+}
+async function main() {
+  const command = process.argv[2];
+  const argument = process.argv[3];
+  const provider = providerFromInvocation(process.argv, process.env);
+  if (command === "connect" || command === "login")
+    await connect(provider);
+  else if (command === "hook")
+    await hook(provider, argument);
+  else if (command === "connector")
+    await runConnector(provider);
+  else if (command === "repo-mcp")
+    await runRepositoryMcpServer();
+  else if (command === "status")
+    await status(provider);
+  else if (command === "disconnect")
+    await disconnect(provider);
+  else
     usage();
 }
-main().catch((error51) => {
-  console.error(`critic: ${error51 instanceof Error ? error51.message : String(error51)}`);
-  process.exit(1);
+await main().catch((error51) => {
+  process.stderr.write(`critic: ${error51 instanceof Error ? error51.message : String(error51)}
+`);
+  process.exitCode = 1;
 });

@@ -1,6 +1,6 @@
 {
   "name": "critic",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Explain agent-written changes with durable narratives, visual evidence, and author-backed review conversations.",
   "author": {
     "name": "Feyn",
@@ -9,9 +9,10 @@
   },
   "homepage": "https://www.critic.run",
   "repository": "https://github.com/feyninc/critic-plugin",
-  "license": "Apache-2.0",
+  "license": "UNLICENSED",
   "keywords": ["code-review", "change-narratives", "coding-agents"],
   "skills": "./skills/",
+  "hooks": "./hooks/codex.json",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Critic",
