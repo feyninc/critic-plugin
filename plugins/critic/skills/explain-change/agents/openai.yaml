@@ -1,0 +1,9 @@
+interface:
+  display_name: 'Explain changes with Critic'
+  short_description: 'Publish durable explanations for agent-written changes'
+  default_prompt: 'Publish the current authored patchset to Critic with a concise change narrative and one useful explanation for every changed file.'
+
+policy:
+  products:
+    - CODEX
+  allow_implicit_invocation: true

@@ -19738,7 +19738,7 @@ async function scanUnsyncedCommits(root, branch, headSha, alreadySynced, resolve
 }
 
 // runtime/src/version.ts
-var criticPluginVersion = "3.0.0";
+var criticPluginVersion = "3.0.1";
 var criticProtocolVersion = 3;
 var criticHookDefinitionVersion = 3;
 

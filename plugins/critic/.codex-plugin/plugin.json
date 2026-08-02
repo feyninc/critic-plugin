@@ -1,9 +1,9 @@
 {
   "name": "critic",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Explain agent-written changes with durable narratives, visual evidence, and author-backed review conversations.",
   "author": {
-    "name": "Feyn",
+    "name": "Chonkie, Inc.",
     "email": "support@usefeyn.com",
     "url": "https://github.com/feyninc"
   },
@@ -18,7 +18,7 @@
     "displayName": "Critic",
     "shortDescription": "Explain agent-written changes where reviewers read them.",
     "longDescription": "Critic publishes concise change and file narratives from the agent session that wrote the code. Reviewers can inspect stable patchsets, visual evidence, and author-backed answers without adding generated prose to source files.",
-    "developerName": "Feyn",
+    "developerName": "Chonkie, Inc.",
     "category": "Developer Tools",
     "capabilities": [
       "Publish change narratives",

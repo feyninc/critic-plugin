@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.1
+
+- Declares the hosted publication result schema for reliable tool consumption and directory review.
+- Matches the exact namespaced publication tool emitted by Codex and Claude Code.
+- Marks the explanation skill as Codex-only and explicitly allows implicit invocation.
+- Aligns package publisher metadata with the verified Chonkie, Inc. business identity.
+
 ## 3.0.0
 
 - Replaces the polling daemon with one-shot lifecycle hooks and a bounded reviewer connector.
