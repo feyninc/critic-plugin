@@ -12,27 +12,14 @@
         ]
       }
     ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${PLUGIN_ROOT}/bin/critic.mjs\" hook user-prompt-submit --provider codex",
-            "timeout": 5,
-            "statusMessage": "Updating Critic"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|apply_patch|(?:^|__)critic(?:\\.|_)?publish_patchset$",
+        "matcher": "Bash|Edit|Write|apply_patch|(?:^|__)critic(?:\\.|_)?publish_patchset$",
         "hooks": [
           {
             "type": "command",
             "command": "node \"${PLUGIN_ROOT}/bin/critic.mjs\" hook post-tool-use --provider codex",
-            "timeout": 5,
-            "statusMessage": "Updating Critic"
+            "timeout": 10
           }
         ]
       }
@@ -43,8 +30,7 @@
           {
             "type": "command",
             "command": "node \"${PLUGIN_ROOT}/bin/critic.mjs\" hook stop --provider codex",
-            "timeout": 20,
-            "statusMessage": "Checking Critic explanations"
+            "timeout": 10
           }
         ]
       }

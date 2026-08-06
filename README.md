@@ -9,7 +9,7 @@ then ask the authoring agent questions against the stable patchset.
 
 - One `explain-change` skill.
 - One MCP tool named `critic.publish_patchset`.
-- Four lifecycle hooks that connect an authoring session, observe its work, and
+- Three lifecycle hooks that connect an authoring session, observe its work, and
   request a publication checkpoint before the session finishes.
 - One Node runtime containing short-lived lifecycle hooks and a bounded
   outbound reviewer connector.
@@ -25,7 +25,7 @@ Install Critic through the plugin directory for your coding agent. Sign in at
 flow for Codex or Claude Code.
 
 Codex requires explicit trust for command hooks. Open **Settings → Hooks** and
-trust Critic's `SessionStart`, `UserPromptSubmit`, `PostToolUse`, and `Stop`
+trust Critic's `SessionStart`, `PostToolUse`, and `Stop`
 hooks before starting the authoring task.
 
 Claude Code users in a managed environment may need an administrator to allow
@@ -42,7 +42,7 @@ results are discarded. There is no local spool, Git poller, filesystem watcher,
 runtime copy, or private updater. Device credentials are stored under
 `~/.critic/v3` with user-only permissions.
 
-The reviewer connector holds one outbound Convex websocket and a 45-second
+The reviewer connector holds one outbound Convex websocket and a five-minute
 heartbeat while connected. Idle heartbeats do not run Git, scan files, or grow
 local state. Reviewer conversations use the exact authored session and expose
 only Critic's repository-scoped read tools. Critic never reads coding-agent

@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.0
+
+- Moves repository observation to material PostToolUse events and makes ordinary Stop hooks constant-time local checks.
+- Gives the authoring agent one hidden first-edit reminder and one bounded conditional adjudication per unpublished revision.
+- Tracks local snapshots, commits, remote refs, GitHub patchsets, and pull requests as one change lineage.
+- Adds optional agent attention requests to the publication tool and deduplicates them across local-to-remote promotion.
+- Reduces the idle heartbeat to once every five minutes and removes focus-driven GitHub refreshes from the live dashboard.
+
 ## 3.0.1
 
 - Declares the hosted publication result schema for reliable tool consumption and directory review.

@@ -25,6 +25,10 @@ Never explain syntax or place Critic text in source files, commit messages, or G
 
 `critic.publish_patchset` is an incremental upsert. Include only explanations that need to be added or changed; omitted explanations and their discussion threads remain intact. Use `deleteExplanations` in the same tool only for explanations that should be removed. A new patchset must still end with one current change narrative and one current file narrative for every changed path.
 
+## Requesting the owner
+
+Set `requestAttention` only when the owner must make a product or architecture decision, inspect behavior with meaningful risk, or review intentionally incomplete work. Do not set it for routine completed changes. Critic records the request as activity on the change lineage, so a local change that later becomes a GitHub change remains one For You item with one expandable history.
+
 ## Preview information
 
 Only the change narrative may include preview information:
