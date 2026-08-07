@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "version": "3.1.0",
+  "version": "3.2.0",
   "source": {
     "algorithm": "sha256",
-    "digest": "79734cc8a487ba1e35233f4201634c10ed323ff8d774f2ae10c2c29cf67a7cee"
+    "digest": "40bd6e56b005e5d81b121a604b4c85d383036c45fe48e9f1d70091bb9d23db30"
   },
   "runtime": {
     "entrypoint": "bin/critic.mjs",
     "algorithm": "sha256",
-    "digest": "3baf1b4ae46a0f588134c18b1ef910687b27d234600db935e9699aa254f8b696"
+    "digest": "78c38eee2751cdf14eeb31f36bad81d7e39fb22015b02a2e4adc18d433c0c2a2"
   }
 }

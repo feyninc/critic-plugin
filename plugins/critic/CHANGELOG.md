@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.2.0
+
+- Detects Codex shell and Git mutations through the native `exec_command` hook payload.
+- Disables lifecycle work per task when a repository is not connected and rechecks after an explicit enable or repository change.
+- Adds lightweight per-task on, off, and status controls without another MCP tool or background process.
+- Keeps read-only tool hooks free of Git, network, connector, and task-state work.
+
 ## 3.1.0
 
 - Moves repository observation to material PostToolUse events and makes ordinary Stop hooks constant-time local checks.

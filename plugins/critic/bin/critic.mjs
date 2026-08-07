@@ -12090,6 +12090,7 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 var maxSessionFiles = 100;
+var maxTaskPolicyFiles = 100;
 var maxPushFiles = 32;
 var stateTtlMs = 30 * 24 * 60 * 60000;
 function criticHome() {
@@ -12106,6 +12107,9 @@ function connectorPath(provider) {
 }
 function sessionDirectory(provider) {
   return join(providerDirectory(provider), "sessions");
+}
+function taskPolicyDirectory(provider) {
+  return join(providerDirectory(provider), "task-policies");
 }
 function pushDirectory(provider) {
   return join(providerDirectory(provider), "pushes");
@@ -12198,6 +12202,21 @@ async function listSessions(provider) {
   const records = await Promise.all(entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json")).map((entry) => readJson(join(directory, entry.name))));
   return records.filter((record) => record?.version === 2 && record.provider === provider && Date.now() - record.updatedAt <= stateTtlMs).sort((left, right) => right.updatedAt - left.updatedAt).slice(0, maxSessionFiles);
 }
+async function loadTaskPolicy(provider, sessionId) {
+  const policy = await readJson(join(taskPolicyDirectory(provider), `${fileKey(sessionId)}.json`));
+  return policy?.version === 1 && policy.provider === provider && policy.sessionId === sessionId ? policy : null;
+}
+async function saveTaskPolicy(policy) {
+  const directory = taskPolicyDirectory(policy.provider);
+  await ensureDirectory(directory);
+  await atomicJson(join(directory, `${fileKey(policy.sessionId)}.json`), policy);
+  await prune(directory, maxTaskPolicyFiles);
+}
+async function clearTaskPolicy(provider, sessionId) {
+  await rm(join(taskPolicyDirectory(provider), `${fileKey(sessionId)}.json`), {
+    force: true
+  });
+}
 async function savePush(provider, receipt) {
   const directory = pushDirectory(provider);
   await ensureDirectory(directory);
@@ -12219,6 +12238,7 @@ async function ensureRuntimeDirectories(provider) {
   await Promise.all([
     ensureDirectory(providerDirectory(provider)),
     ensureDirectory(sessionDirectory(provider)),
+    ensureDirectory(taskPolicyDirectory(provider)),
     ensureDirectory(pushDirectory(provider)),
     ensureDirectory(unavailableRepositoryDirectory(provider)),
     ensureDirectory(onboardingDirectory(provider))
@@ -18943,9 +18963,9 @@ var components = componentsGeneric();
 import { createHash as createHash3 } from "node:crypto";
 
 // runtime/src/version.ts
-var criticPluginVersion = "3.1.0";
+var criticPluginVersion = "3.2.0";
 var criticProtocolVersion = 4;
-var criticHookDefinitionVersion = 4;
+var criticHookDefinitionVersion = 5;
 
 // runtime/src/report.ts
 function hookDefinitionHash() {
@@ -19068,6 +19088,9 @@ async function gitText(root, args, accepted = [0]) {
 // runtime/src/git.ts
 var maxRepositoryDepth = 64;
 var githubRemote = /^(?:https?:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([^/]+)\/([^/]+?)(?:\.git)?\/?$/;
+
+class UnsupportedRepositoryOriginError extends Error {
+}
 async function exists(path) {
   return await lstat(path).then(() => true).catch((error) => {
     if (error.code === "ENOENT")
@@ -19121,14 +19144,10 @@ async function workspaceFingerprint(root) {
   return createHash4("sha256").update(canonical).update("\x00").update(String(metadata.dev)).update("\x00").update(String(metadata.ino)).digest("hex");
 }
 async function identifyRepository(fingerprint) {
-  const remote = await gitText(fingerprint.root, [
-    "remote",
-    "get-url",
-    "origin"
-  ]);
+  const remote = await gitText(fingerprint.root, ["remote", "get-url", "origin"], [0, 2, 128]);
   const coordinates = parseGitHubRemote(remote);
   if (!coordinates) {
-    throw new Error("Critic requires an origin hosted on GitHub for this repository");
+    throw new UnsupportedRepositoryOriginError("Critic requires an origin hosted on GitHub for this repository");
   }
   return {
     ...fingerprint,
@@ -19204,11 +19223,21 @@ function authoringPushGuidance(branch) {
 function blockOutput(reason) {
   return { decision: "block", reason };
 }
-function sessionStartOutput() {
+function sessionStartOutput(input) {
+  const context = input.disabled ? [
+    input.unavailable ? "Critic checks are disabled for this task because this repository was not connected to Critic when it was last checked." : "Critic checks are disabled for this task by the user.",
+    `If the user connects the repository or asks to resume Critic, run \`${input.onCommand}\`.`,
+    `To inspect the current setting, run \`${input.statusCommand}\`.`
+  ] : [
+    "Critic is available for material code changes. If you edit code, publishing the exact current revision is part of completing the task. Follow the installed `critic:explain-change` skill and include the canonical Critic URL in your normal final answer.",
+    `If the user asks to disable Critic for this task, run \`${input.offCommand}\`. To enable it again, run \`${input.onCommand}\`.`
+  ];
   return {
     hookSpecificOutput: {
       hookEventName: "SessionStart",
-      additionalContext: "Critic is available for material code changes. If you edit code, publishing the exact current revision is part of completing the task. Follow the installed `critic:explain-change` skill and include the canonical Critic URL in your normal final answer."
+      additionalContext: context.join(`
+
+`)
     }
   };
 }
@@ -19823,8 +19852,8 @@ async function scanUnsyncedCommits(root, branch, headSha, alreadySynced, resolve
 // runtime/src/lifecycle-runtime.ts
 var publicationToolPattern = /(?:^|__)critic(?:\.|_)?publish_patchset$/;
 var directEditTools = {
-  codex: /^(?:apply_patch|Edit|Write)$/i,
-  claude: /^(?:Edit|Write|NotebookEdit)$/i
+  codex: /^(?:apply_patch|Edit|Write|MultiEdit)$/i,
+  claude: /^(?:Edit|Write|MultiEdit|NotebookEdit)$/i
 };
 var shellTools = /^(?:Bash|exec_command)$/i;
 var gitPrefix = String.raw`(?:^|[;&|]\s*)git\s+(?:(?:-C|-c|--git-dir|--work-tree)\s+(?:"[^"]*"|'[^']*'|\S+)\s+)*`;
@@ -19832,6 +19861,7 @@ var gitMutation = new RegExp(`${gitPrefix}(?:add|am|apply|checkout|cherry-pick|c
 var filesystemMutation = /(?:^|[;&|]\s*)(?:cp|install|mkdir|mv|rm|touch|truncate)\b|(?:^|\s)(?:sed|perl)\s+[^\n]*\s-i(?:\s|$)|(?:^|\s)(?:prettier|eslint)\b[^\n]*(?:--write|--fix)\b|(?:^|\s)(?:tee\b|>{1,2}\s*[^&])/i;
 var gitRead = new RegExp(`${gitPrefix}(?:status|diff|log|show|rev-parse|ls-files|ls-tree|blame)\\b`, "i");
 var definitelyReadOnly = /^\s*(?:rg|grep|find|ls|pwd|which|type|head|tail|sed\s+-n|cat)\b/;
+var criticTaskControl = /critic(?:\.mjs)?["']?\s+task\s+(?:on|off|status)\b/i;
 function insideWorkspace(workspace, cwd, path) {
   const absolutePath = isAbsolute(path) ? path : resolve2(cwd, path);
   const child = relative(resolve2(workspace), absolutePath);
@@ -19846,7 +19876,8 @@ function isPublicationTool(input) {
 function shellCommand(input) {
   if (!input.tool_input || typeof input.tool_input !== "object")
     return "";
-  const command = input.tool_input.command;
+  const value = input.tool_input;
+  const command = value.command ?? value.cmd;
   return typeof command === "string" ? command : "";
 }
 function hookCwd(input) {
@@ -19868,6 +19899,8 @@ function classifyTool(provider, input) {
   if (!shellTools.test(name))
     return "ignore";
   const command = shellCommand(input);
+  if (criticTaskControl.test(command))
+    return "ignore";
   if (gitMutation.test(command) || filesystemMutation.test(command)) {
     return "shell-write";
   }
@@ -19886,6 +19919,20 @@ async function registerSession(identity, provider, sourceSessionId, runtimeInsta
     discoverChange: false,
     hookEvent: "post-tool-use"
   });
+  if (!registration.eligible) {
+    await saveTaskPolicy({
+      version: 1,
+      provider,
+      sessionId: sourceSessionId,
+      mode: "unavailable",
+      cwd: identity.root,
+      workspaceRoot: identity.root,
+      owner: identity.owner,
+      repository: identity.repository,
+      updatedAt: Date.now()
+    });
+    return null;
+  }
   const existing = await loadSession(provider, sourceSessionId);
   const record = existing ?? {
     version: 2,
@@ -19993,13 +20040,34 @@ function createLifecycleRunner(input) {
     const path = filePath(hook);
     if (path && !insideWorkspace(root, hookCwd(hook), path))
       return {};
-    const identity = await identifyRepository(await fingerprintRepository(root));
-    const existing = await loadSession(input.provider, sourceSessionId);
     const candidate = classifyTool(input.provider, hook);
+    const fingerprint = await fingerprintRepository(root);
+    const existing = await loadSession(input.provider, sourceSessionId);
+    if (fingerprint.clean && candidate !== "shell-write")
+      return {};
+    let identity;
+    try {
+      identity = await identifyRepository(fingerprint);
+    } catch (error) {
+      if (!(error instanceof UnsupportedRepositoryOriginError))
+        throw error;
+      await saveTaskPolicy({
+        version: 1,
+        provider: input.provider,
+        sessionId: sourceSessionId,
+        mode: "unavailable",
+        cwd: root,
+        workspaceRoot: root,
+        updatedAt: Date.now()
+      });
+      return {};
+    }
     if (existing?.observedRevision === identity.digest && (candidate === "shell-unknown" || identity.clean && candidate !== "shell-write")) {
       return {};
     }
     let record = await registerSession(identity, input.provider, sourceSessionId, input.runtimeInstanceId, input.agentCall);
+    if (!record)
+      return {};
     record = observeRevision(record, hookTurnId(input.provider, hook, record), identity.digest);
     const checkpoint = await sessionCheckpoint(record, input.agentCall);
     record.checkpointToken = checkpoint.token;
@@ -44918,6 +44986,31 @@ async function sendConnectorEvent(descriptor, input) {
   return await controlRequest(descriptor, "/event", input) ?? {};
 }
 
+// runtime/src/task-policy.ts
+import { isAbsolute as isAbsolute4, relative as relative5, resolve as resolve6 } from "node:path";
+function taskPolicyApplies(policy, cwd) {
+  if (policy.mode === "off")
+    return true;
+  if (!policy.workspaceRoot)
+    return true;
+  const child = relative5(resolve6(policy.workspaceRoot), resolve6(cwd));
+  return !child || !child.startsWith("..") && !isAbsolute4(child);
+}
+function taskCommand(action, provider, sessionId, cwd) {
+  return [
+    JSON.stringify(process.execPath),
+    JSON.stringify(process.argv[1]),
+    "task",
+    action,
+    "--provider",
+    provider,
+    "--session",
+    JSON.stringify(sessionId),
+    "--cwd",
+    JSON.stringify(cwd)
+  ].join(" ");
+}
+
 // runtime/src/hooks.ts
 function sessionId(input) {
   return typeof input.session_id === "string" && input.session_id.trim() ? input.session_id : undefined;
@@ -45028,7 +45121,7 @@ async function renewStopCheckpoint(provider, record3) {
       });
       if (status.checkpointExpiresAt)
         break;
-      await new Promise((resolve6) => setTimeout(resolve6, 250));
+      await new Promise((resolve7) => setTimeout(resolve7, 250));
     }
     return {
       ...record3,
@@ -45046,21 +45139,45 @@ async function handleHook(provider, event, input) {
     return;
   }
   try {
-    if (event === "stop") {
-      output(await stopHook(provider, sourceSessionId));
-      return;
-    }
+    const cwd = hookCwd2(input);
     if (event === "post-tool-use" && classifyTool(provider, input) === "ignore" && !isPublicationTool(input)) {
       output({});
+      return;
+    }
+    const policy = await loadTaskPolicy(provider, sourceSessionId);
+    if (event === "session-start") {
+      const config3 = await loadConfig(provider);
+      if (!config3) {
+        output({});
+        return;
+      }
+      output(sessionStartOutput({
+        disabled: Boolean(policy),
+        unavailable: policy?.mode === "unavailable",
+        onCommand: taskCommand("on", provider, sourceSessionId, cwd),
+        offCommand: taskCommand("off", provider, sourceSessionId, cwd),
+        statusCommand: taskCommand("status", provider, sourceSessionId, cwd)
+      }));
+      return;
+    }
+    if (policy && taskPolicyApplies(policy, cwd)) {
+      output({});
+      return;
+    }
+    if (policy) {
+      await clearTaskPolicy(provider, sourceSessionId);
+      if (event === "stop") {
+        output({});
+        return;
+      }
+    }
+    if (event === "stop") {
+      output(await stopHook(provider, sourceSessionId));
       return;
     }
     const config2 = await loadConfig(provider);
     if (!config2) {
       output({});
-      return;
-    }
-    if (event === "session-start") {
-      output(sessionStartOutput());
       return;
     }
     const connector = await ensureConnector(provider);
@@ -45173,6 +45290,48 @@ async function status(provider) {
   })}
 `);
 }
+async function taskPolicy(provider, action) {
+  const sessionId2 = option2("--session");
+  if (!sessionId2)
+    throw new Error("task requires --session");
+  const cwd = option2("--cwd") ?? process.cwd();
+  if (action === "on") {
+    await clearTaskPolicy(provider, sessionId2);
+    process.stdout.write(`Critic is enabled for this task and will check the next material repository change.
+`);
+    return;
+  }
+  if (action === "off") {
+    await saveTaskPolicy({
+      version: 1,
+      provider,
+      sessionId: sessionId2,
+      mode: "off",
+      cwd,
+      workspaceRoot: await findRepositoryRoot(cwd) ?? undefined,
+      updatedAt: Date.now()
+    });
+    process.stdout.write(`Critic is disabled for this task.
+`);
+    return;
+  }
+  if (action === "status") {
+    const policy = await loadTaskPolicy(provider, sessionId2);
+    if (!policy) {
+      process.stdout.write(`Critic is enabled automatically for this task.
+`);
+    } else if (policy.mode === "off") {
+      process.stdout.write(`Critic is disabled for this task by the user.
+`);
+    } else {
+      const repository = policy.owner && policy.repository ? ` ${policy.owner}/${policy.repository}` : " this repository";
+      process.stdout.write(`Critic is disabled because${repository} is not connected. Install the Critic GitHub App from https://www.critic.run/app?connections=repositories, then enable this task again.
+`);
+    }
+    return;
+  }
+  throw new Error("task requires on, off, or status");
+}
 async function hook(provider, event) {
   if (!isLifecycleEvent(event))
     throw new Error("Unknown hook event");
@@ -45188,6 +45347,7 @@ Usage:
   critic hook <session-start|post-tool-use|stop>
   critic connector --provider codex|claude
   critic repo-mcp
+  critic task <on|off|status> --session <session-id> --provider codex|claude
   critic status --provider codex|claude
   critic disconnect --provider codex|claude
 `);
@@ -45204,6 +45364,8 @@ async function main() {
     await runConnector(provider);
   else if (command === "repo-mcp")
     await runRepositoryMcpServer();
+  else if (command === "task")
+    await taskPolicy(provider, argument);
   else if (command === "status")
     await status(provider);
   else if (command === "disconnect")

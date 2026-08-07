@@ -14,7 +14,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Edit|Write|apply_patch|(?:^|__)critic(?:\\.|_)?publish_patchset$",
+        "matcher": "Bash|exec_command|Edit|Write|MultiEdit|apply_patch|(?:^|__)critic(?:\\.|_)?publish_patchset$",
         "hooks": [
           {
             "type": "command",

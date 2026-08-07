@@ -18,6 +18,12 @@ then ask the authoring agent questions against the stable patchset.
 The plugin does not review code, merge changes, push branches, open pull
 requests, or write generated explanations into source files.
 
+Critic automatically disables checks for a task whose repository is not
+connected. Install the GitHub App from Connections and enable that task again
+to onboard the repository. A user can also ask their coding agent to turn
+Critic on, off, or report its status for the current task. These controls are
+local lifecycle settings and do not add another MCP tool.
+
 ## Connection
 
 Install Critic through the plugin directory for your coding agent. Sign in at
@@ -40,7 +46,9 @@ only the event, session identifier, working directory, and relevant tool name.
 Prompts, assistant messages, transcript locations, tool arguments, and tool
 results are discarded. There is no local spool, Git poller, filesystem watcher,
 runtime copy, or private updater. Device credentials are stored under
-`~/.critic/v3` with user-only permissions.
+`~/.critic/v3` with user-only permissions. Bounded task policy files remember
+only whether one coding-agent task is manually disabled or last observed in an
+unavailable repository.
 
 The reviewer connector holds one outbound Convex websocket and a five-minute
 heartbeat while connected. Idle heartbeats do not run Git, scan files, or grow
