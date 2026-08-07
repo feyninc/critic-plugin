@@ -6,6 +6,7 @@
 - Disables lifecycle work per task when a repository is not connected and rechecks after an explicit enable or repository change.
 - Adds lightweight per-task on, off, and status controls without another MCP tool or background process.
 - Keeps read-only tool hooks free of Git, network, connector, and task-state work.
+- Binds renewed checkpoints to the ready local snapshot whenever the worktree still has unpublished edits, and retires each one-use token after publication.
 
 ## 3.1.0
 

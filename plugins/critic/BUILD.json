@@ -3,11 +3,11 @@
   "version": "3.2.0",
   "source": {
     "algorithm": "sha256",
-    "digest": "40bd6e56b005e5d81b121a604b4c85d383036c45fe48e9f1d70091bb9d23db30"
+    "digest": "6b998f5f1b781ec7ba188e991d0f31cfa19ba8c41427e971c014c7fe63d01f06"
   },
   "runtime": {
     "entrypoint": "bin/critic.mjs",
     "algorithm": "sha256",
-    "digest": "78c38eee2751cdf14eeb31f36bad81d7e39fb22015b02a2e4adc18d433c0c2a2"
+    "digest": "11106e1054c3f3e6bbd12fbf0142589e0d06a58c02cf79caac9b8c3e464a9667"
   }
 }

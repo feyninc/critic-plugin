@@ -19297,6 +19297,8 @@ function markReminderSent(record) {
 function markPublished(record) {
   return {
     ...record,
+    checkpointToken: undefined,
+    checkpointExpiresAt: undefined,
     publishedRevision: record.observedRevision,
     turn: { ...record.turn, suspectedRevision: undefined },
     updatedAt: Date.now()
@@ -19862,6 +19864,9 @@ var filesystemMutation = /(?:^|[;&|]\s*)(?:cp|install|mkdir|mv|rm|touch|truncate
 var gitRead = new RegExp(`${gitPrefix}(?:status|diff|log|show|rev-parse|ls-files|ls-tree|blame)\\b`, "i");
 var definitelyReadOnly = /^\s*(?:rg|grep|find|ls|pwd|which|type|head|tail|sed\s+-n|cat)\b/;
 var criticTaskControl = /critic(?:\.mjs)?["']?\s+task\s+(?:on|off|status)\b/i;
+function preferLocalPublication(worktreeClean) {
+  return !worktreeClean;
+}
 function insideWorkspace(workspace, cwd, path) {
   const absolutePath = isAbsolute(path) ? path : resolve2(cwd, path);
   const child = relative(resolve2(workspace), absolutePath);
@@ -20002,7 +20007,7 @@ async function synchronizeLocal(identity, record, agentCall) {
     sourceSessionId: record.sessionId,
     headSha: identity.headSha,
     workspaceFingerprint: identity.workspaceFingerprint,
-    preferLocal: false,
+    preferLocal: preferLocalPublication(identity.clean),
     issueCheckpoint: false,
     checkpointToken: record.checkpointToken
   });
@@ -45105,6 +45110,7 @@ async function renewStopCheckpoint(provider, record3) {
     return record3;
   const agentCall = createAgentClient(config2);
   try {
+    const fingerprint = await fingerprintRepository(record3.cwd);
     const checkpoint = await agentCall("session_checkpoint", {
       sourceSessionId: record3.sessionId,
       workspaceFingerprint: record3.workspaceFingerprint
@@ -45115,7 +45121,7 @@ async function renewStopCheckpoint(provider, record3) {
         sourceSessionId: record3.sessionId,
         headSha: record3.headSha,
         workspaceFingerprint: record3.workspaceFingerprint,
-        preferLocal: false,
+        preferLocal: preferLocalPublication(fingerprint.clean),
         issueCheckpoint: false,
         checkpointToken: checkpoint.checkpointToken
       });
